@@ -2,7 +2,7 @@ from sklearn import datasets
 from sklearn.ensemble import RandomForestClassifier
 import simpyl
 
-sl = simpyl.Simpyl(__name__)
+sl = simpyl.Simpyl()
 
 @sl.add_procedure('load')
 def load_data():
@@ -24,7 +24,7 @@ def train_classifier(X_train, y_train, n_estimators=10, min_samples_split=2):
 @sl.add_procedure('test')
 def test_classifier(clf, X, y_true):
     y_pred = clf.predict(X)
-    print (y_pred == y_true).sum() / float(y_pred.size)
+    return (y_pred == y_true).sum() / float(y_pred.size)
 
 
 def manual_run():
@@ -32,6 +32,7 @@ def manual_run():
     clf = train_classifier(X, y)
     # testing on the training set is bad practice, but serves as a demonstration
     score = test_classifier(clf, X, y)
+    print("Overall accuracy: {}%".format(100.0*score))
 
 
 if __name__ == '__main__':
