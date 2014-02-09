@@ -1,11 +1,13 @@
 from sklearn import datasets
 from sklearn.ensemble import RandomForestClassifier
+import numpy as np
+
 import simpyl
 
 sl = simpyl.Simpyl()
 
 
-@sl.add_procedure('load')
+@sl.add_procedure('load', cache=['X.csv', 'y.csv'])
 def load_data():
     # load the iris dataset
     iris = datasets.load_iris()
@@ -14,7 +16,7 @@ def load_data():
     return X, y
 
 
-@sl.add_procedure('train')
+@sl.add_procedure('train', cache=['classifier.rf'])
 def train_classifier(X_train, y_train, n_estimators=10, min_samples_split=2):
     clf = RandomForestClassifier(n_estimators=n_estimators,
                                  min_samples_split=min_samples_split)
@@ -25,7 +27,7 @@ def train_classifier(X_train, y_train, n_estimators=10, min_samples_split=2):
 @sl.add_procedure('test')
 def test_classifier(clf, X, y_true):
     y_pred = clf.predict(X)
-    return (y_pred == y_true).sum() / float(y_pred.size)
+    return np.sum(y_pred == y_true) / float(y_pred.size)
 
 
 def manual_run():
