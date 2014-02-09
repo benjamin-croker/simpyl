@@ -50,6 +50,10 @@ _insert_run_sql = """
 INSERT INTO run VALUES (NULL,?,?,?,?);
 """
 
+_update_run_sql = """
+UPDATE run SET status = ? WHERE id = ?
+"""
+
 _insert_cachefile_sql = """
 INSERT INTO cachefile VALUES (NULL,?,?);
 """
@@ -58,8 +62,8 @@ _insert_procedure_call_sql = """
 INSERT INTO procedure_call VALUES (NULL,?,?,?,?,?,?,?)
 """
 
-_update_run_sql = """
-UPDATE run SET status = ? WHERE id = ?
+_update_procedure_call_sql = """
+UPDATE procedure_call SET result = ?, end_time = ? WHERE id = ?
 """
 
 
@@ -111,15 +115,22 @@ def update_run_status(db_con, run_id, status):
     db_con.commit()
 
 
-def register_procedure_call(db_con, start_time, end_time, procedure_name,
-                            order, result, kwargs, run_id):
+def register_procedure_call(db_con, start_time, procedure_name, order, kwargs, run_id):
     """ adds a procedure call to the database
     """
-    cursor = db_con.execute(_insert_procedure_call_sql, [start_time, end_time, procedure_name,
-                                                         order, result, kwargs, run_id])
+    # end time and result are None for the time being
+    cursor = db_con.execute(_insert_procedure_call_sql, [start_time, None, procedure_name,
+                                                         order, None, kwargs, run_id])
     procedure_call_id = cursor.lastrowid
     db_con.commit()
     return procedure_call_id
+
+
+def update_procedure_call_result(db_con, procedure_call_id, result, end_time):
+    """ updated the procedure call with a result
+    """
+    db_con.execute(_update_procedure_call_sql, [result, end_time, procedure_call_id])
+    db_con.commit()
 
 
 def register_environment(db_con, environment_name):
@@ -134,3 +145,8 @@ def register_environment(db_con, environment_name):
         return False
 
 
+def register_cached_file(db_con, filename, procedure_call_id):
+    """ register that a file was cached as part of the passed procedure call
+    """
+    db_con.execute(_insert_cachefile_sql, filename, procedure_call_id)
+    db_con.commit()
