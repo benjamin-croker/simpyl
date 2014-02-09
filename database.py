@@ -3,13 +3,11 @@ database.py:
     File for connecting to an sqlite database to store the data
 """
 import os
-import sys
 import sqlite3
 
 _create_tables_sql = ["""
 CREATE TABLE environment (
-    id INTEGER PRIMARY KEY,
-    name TEXT
+    name TEXT PRIMARY KEY
 );
 """,
                       """
@@ -18,8 +16,8 @@ CREATE TABLE run (
     timestamp REAL,
     description TEXT,
     status TEXT,
-    env_id INTEGER,
-    FOREIGN KEY environment_id REFERENCES enviromnent(id)
+    environment_name TEXT,
+    FOREIGN KEY environment_name REFERENCES enviromnent(name)
 );
 """,
                       """
@@ -38,7 +36,7 @@ CREATE TABLE procedure_call (
     procedure_name TEXT,
     order INTEGER,
     result TEXT,
-    args TEXT,
+    kwargs TEXT,
     run_id INTEGER,
     FOREIGN KEY run_id REFERENCES run(id)
 );
@@ -49,15 +47,19 @@ INSERT INTO environment VALUES (NULL,?);
 """
 
 _insert_run_sql = """
-INSERT INTO environment VALUES (NULL,?,?,?,?);
+INSERT INTO run VALUES (NULL,?,?,?,?);
 """
 
 _insert_cachefile_sql = """
 INSERT INTO cachefile VALUES (NULL,?,?);
 """
 
-_insert_procedure_call = """
+_insert_procedure_call_sql = """
 INSERT INTO procedure_call VALUES (NULL,?,?,?,?,?,?,?)
+"""
+
+_update_run_sql = """
+UPDATE run SET status = ? WHERE id = ?
 """
 
 
@@ -91,3 +93,19 @@ def close_db_connection(db_con):
     """
     db_con.commit()
     db_con.close()
+
+
+def register_run(db_con, timestamp, description, status, environment_name):
+    """ add information about a run to the database and return the database key for it
+    """
+    cursor = db_con.execute(_insert_run_sql, [timestamp, description, status, environment_name])
+    run_id = cursor.lastrowid
+    db_con.commit()
+    return run_id
+
+
+def update_run_status(db_con, run_id, status):
+    """ updates a run with a new status, e.g. when it's finished
+    """
+    db_con.execute(_update_run_sql, [status, run_id])
+    db_con.commit()
