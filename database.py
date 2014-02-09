@@ -43,7 +43,7 @@ CREATE TABLE procedure_call (
 """]
 
 _insert_environment_sql = """
-INSERT INTO environment VALUES (NULL,?);
+INSERT INTO environment VALUES (?);
 """
 
 _insert_run_sql = """
@@ -76,7 +76,7 @@ def reset_database(db_filename='simpyl.db'):
     db_con = open_db_connection(db_filename)
     for _create_table_sql in _create_tables_sql:
         db_con.execute(_create_table_sql)
-    # create the default environment
+        # create the default environment
     db_con.execute(_insert_environment_sql, ['default'])
     db_con.commit()
     db_con.close()
@@ -109,3 +109,28 @@ def update_run_status(db_con, run_id, status):
     """
     db_con.execute(_update_run_sql, [status, run_id])
     db_con.commit()
+
+
+def register_procedure_call(db_con, start_time, end_time, procedure_name,
+                            order, result, kwargs, run_id):
+    """ adds a procedure call to the database
+    """
+    cursor = db_con.execute(_insert_procedure_call_sql, [start_time, end_time, procedure_name,
+                                                         order, result, kwargs, run_id])
+    procedure_call_id = cursor.lastrowid
+    db_con.commit()
+    return procedure_call_id
+
+
+def register_environment(db_con, environment_name):
+    """ adds an environment to the database if it doesn't exist.
+        returns True if a new environment was created
+    """
+    try:
+        db_con.execute(_insert_environment_sql, [environment_name])
+        db_con.commit()
+        return True
+    except sqlite3.IntegrityError:
+        return False
+
+

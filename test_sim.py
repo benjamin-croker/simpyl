@@ -4,6 +4,7 @@ import simpyl
 
 sl = simpyl.Simpyl()
 
+
 @sl.add_procedure('load')
 def load_data():
     # load the iris dataset
