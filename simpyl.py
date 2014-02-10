@@ -63,17 +63,19 @@ class Simpyl(object):
         logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s',
                             datefmt='%Y-%m-%d %H:%M:%S',
                             filename=os.path.join(environment, 'logs', 'run_{}.log'.format(run_id)))
+        self._simpyl_log("run #{} started in environment {}".format(run_id, environment))
 
         # call all the procedures
         for procedure in procedures:
 
             # run the procedure
-            start_time = time.time()
             # work out the arguments, loading them from the cache if required
             kwargs = {kw: value for kw, value in [(arg['name'],
                                                    arg['value'] if arg['source'] == 'manual'
                                                    else self._read_cache(arg['value'], environment))
                                                   for arg in procedure['arguments']]}
+            self._simpyl_log("Procedure {} called with arguments {}".format(run_id, kwargs))
+            start_time = time.time()
             results = self.call_procedure(procedure['procedure_name'], kwargs=kwargs)
             end_time = time.time()
 
@@ -107,7 +109,12 @@ class Simpyl(object):
     def log(self, text):
         """ logs some information
         """
-        logging.info(text)
+        logging.info("[user logged] {}".format(text))
+
+    def _simpyl_log(self, text):
+        """ logs information on behalf of simpyl
+        """
+        logging.info("[simpyl logged] {}".format(text))
 
     def _write_cache(self, obj, filename, environment, procedure_call_id):
         """ caches a file with cPickle, unless the filename ends with .csv, then the file will
@@ -121,6 +128,7 @@ class Simpyl(object):
                 cPickle.dump(obj, f)
 
         # update the database to register the cached file
+        self._simpyl_log("{} written to cache".format(filename))
         db.register_cached_file(self._db_con, filename, environment, procedure_call_id)
 
     def _read_cache(self, filename, environment):
