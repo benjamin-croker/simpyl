@@ -10,7 +10,6 @@ import database as db
 
 
 class Simpyl(object):
-
     def __init__(self):
         self._procedures = {}
 
@@ -31,6 +30,7 @@ class Simpyl(object):
             except OSError as exception:
                 if exception.errno != errno.EEXIST:
                     raise
+
         create_dir_if_needed(environment_name)
         create_dir_if_needed(os.path.join(environment_name, 'logs'))
         create_dir_if_needed(os.path.join(environment_name, 'cache'))
@@ -40,8 +40,9 @@ class Simpyl(object):
 
     def add_procedure(self, name, cache=None):
         def decorator(fn):
-            self._procedures[name] = {'fn': fn, 'details': inspect.getargspec(fn), 'cache':cache}
+            self._procedures[name] = {'fn': fn, 'details': inspect.getargspec(fn), 'cache': cache}
             return fn
+
         return decorator
 
     def list_procedures(self):
@@ -68,7 +69,12 @@ class Simpyl(object):
 
             # run the procedure
             start_time = time.time()
-            results = self.call_procedure(procedure['procedure_name'], kwargs=procedure['kwargs'])
+            # work out the arguments, loading them from the cache if required
+            kwargs = {kw: value for kw, value in [(arg['name'],
+                                                   arg['value'] if arg['source'] == 'manual'
+                                                   else self._read_cache(arg['value'], environment))
+                                                  for arg in procedure['arguments']]}
+            results = self.call_procedure(procedure['procedure_name'], kwargs=kwargs)
             end_time = time.time()
 
             # store the name of the saved files instead of the raw result if it's cached
@@ -104,18 +110,25 @@ class Simpyl(object):
         logging.info(text)
 
     def _write_cache(self, obj, filename, environment, procedure_call_id):
-        """ caches a file with cPickle, unless the file is a numpy array of 1 or 2 dimensions
-            and the filename ends with .csv, then the file is saved as a csv
+        """ caches a file with cPickle, unless the filename ends with .csv, then the file will
+            be saved as a .csv file. This will only work if the
         """
-        if type(obj) == np.ndarray and filename[-4:] == '.csv':
-            np.savetxt(filename, obj, delimiter=',')
+        if filename[-4:] == '.csv':
+            # check that the object is valid to save as
+            np.savetxt(os.path.join(environment, 'cache', filename), obj, delimiter=',')
         else:
             with open(os.path.join(environment, 'cache', filename), 'wb') as f:
                 cPickle.dump(obj, f)
 
         # update the database to register the cached file
-        db.register_cached_file(self._db_con, filename, procedure_call_id)
+        db.register_cached_file(self._db_con, filename, environment, procedure_call_id)
 
-
-
-
+    def _read_cache(self, filename, environment):
+        """ loads a file from the cache
+        """
+        if filename[-4:] == '.csv':
+            obj = np.loadtxt(os.path.join(environment, 'cache', filename), delimiter=',')
+        else:
+            with open(os.path.join(environment, 'cache', filename)) as f:
+                obj = cPickle.load(f)
+        return obj

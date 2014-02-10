@@ -21,7 +21,7 @@ CREATE TABLE run (
 );
 """,
                       """
-CREATE TABLE cachefiles (
+CREATE TABLE cachefile (
     id INTEGER PRIMARY KEY,
     filename TEXT,
     procedure_call_id INTEGER,
@@ -54,12 +54,23 @@ _update_run_sql = """
 UPDATE run SET status = ? WHERE id = ?
 """
 
+_insert_procedure_call_sql = """
+INSERT INTO procedure_call VALUES (NULL,?,?,?,?,?,?,?)
+"""
+
 _insert_cachefile_sql = """
 INSERT INTO cachefile VALUES (NULL,?,?);
 """
 
-_insert_procedure_call_sql = """
-INSERT INTO procedure_call VALUES (NULL,?,?,?,?,?,?,?)
+_update_cachefile_sql = """
+UPDATE cachefile SET procedure_call_id = ?, WHERE id = ?
+"""
+
+_get_current_cachefile_id_sql = """
+SELECT CF.id FROM cachefile as CF
+JOIN procedure_call as PC ON PC.id = CF.procedure_call_id
+JOIN run as R ON R.id = PC.run_id
+WHERE R.environment_name = ? and CF.filename = ?
 """
 
 
@@ -136,8 +147,21 @@ def register_environment(db_con, environment_name):
         return False
 
 
-def register_cached_file(db_con, filename, procedure_call_id):
+def register_cached_file(db_con, filename, environment, procedure_call_id):
     """ register that a file was cached as part of the passed procedure call
+        if a previous cache file exists, it will be updated
     """
-    db_con.execute(_insert_cachefile_sql, filename, procedure_call_id)
+    # check if the files already exists
+    cursor = db_con.execute(_get_current_cachefile_id_sql, [environment, filename])
+    row_id = cursor.fetchone()
+
+    # insert a new entry if it doesn't
+    if row_id is None:
+        db_con.execute(_insert_cachefile_sql, [filename, procedure_call_id])
+    # update the existing one if it does
+    else:
+        # get the actual data from
+        row_id = row_id[0]
+        db_con.execute(_update_cachefile_sql, [procedure_call_id, row_id])
+
     db_con.commit()
