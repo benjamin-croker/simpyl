@@ -19,7 +19,12 @@ class Simpyl(object):
         # open a database connection
         self._db_con = db.open_db_connection('simpyl.db')
 
-    def create_environment(self, environment_name):
+    def log(self, text):
+        """ logs some information
+        """
+        logging.info("[user logged] {}".format(text))
+
+    def _create_environment(self, environment_name):
         """ creates all the necessary directories and database entries for a new environment
             will have no effect if the environment already exists
         """
@@ -38,26 +43,30 @@ class Simpyl(object):
         # register the environment in the database and set the current env
         db.register_environment(self._db_con, environment_name)
 
-    def add_procedure(self, name, cache=None):
+    def _add_procedure(self, procedure_name, caches=None):
         def decorator(fn):
-            self._procedures[name] = {'fn': fn, 'details': inspect.getargspec(fn), 'cache': cache}
+            # get argument information
+            argspec = inspect.getargspec(fn)
+            arguments = [{'name': arg, 'source': 'manual', 'value': None} for arg in argspec.args]
+
+            # add the default arguments, these are the at the end of the argument spec
+            if argspec.defaults is not None:
+                for i, v in enumerate(reversed(argspec.defaults)):
+                    arguments[-(i+1)]['value'] = v
+
+            self._procedures[procedure_name] = {'fn': fn, 'arguments': arguments,
+                                                'procedure_name': procedure_name,
+                                                'caches': caches}
             return fn
 
         return decorator
 
-    def list_procedures(self):
-        return self._procedures
-
-    def run(self, procedures, environment, description):
+    def _run(self, procedures, environment, description):
         # set the current environment
-        self.create_environment(environment)
-
-        # sort the procedures into the correct order:
-        procedures = sorted(procedures, key=lambda x: x['order'])
+        self._create_environment(environment)
 
         # register run in database and get id
         run_id = db.register_run(self._db_con, time.time(), description, 'running', environment)
-        self._current_run = run_id
 
         # set up logging to log to a file
         logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s',
@@ -66,7 +75,7 @@ class Simpyl(object):
         self._simpyl_log("run #{} started in environment {}".format(run_id, environment))
 
         # call all the procedures
-        for procedure in procedures:
+        for i, procedure in enumerate(procedures):
 
             # run the procedure
             # work out the arguments, loading them from the cache if required
@@ -76,40 +85,34 @@ class Simpyl(object):
                                                   for arg in procedure['arguments']]}
             self._simpyl_log("Procedure {} called with arguments {}".format(run_id, kwargs))
             start_time = time.time()
-            results = self.call_procedure(procedure['procedure_name'], kwargs=kwargs)
+            results = self._call_procedure(procedure['procedure_name'], kwargs=kwargs)
             end_time = time.time()
 
             # store the name of the saved files instead of the raw result if it's cached
-            if procedure['cache'] is not None:
-                results_str = ', '.join(procedure['cache'])
+            if procedure['caches'] is not None:
+                results_str = ', '.join(procedure['caches'])
             else:
                 results_str = str(results)
 
             procedure_call_id = db.register_procedure_call(self._db_con, start_time, end_time,
                                                            procedure['procedure_name'],
-                                                           procedure['order'],
-                                                           results_str,
+                                                           i, results_str,
                                                            procedure['kwargs'], run_id)
 
-            if procedure['cache'] is not None:
+            if procedure['caches'] is not None:
                 # make the results iterable if they're not
-                if len(procedure['cache']) == 1:
+                if len(procedure['caches']) == 1:
                     results = (results,)
-                for result, filename in zip(results, procedure['cache']):
+                for result, filename in zip(results, procedure['caches']):
                     self._write_cache(results, filename, environment, procedure_call_id)
 
         # update the run in the database to record its completion
         db.update_run_status(self._db_con, run_id, 'complete')
 
-    def call_procedure(self, name, kwargs):
+    def _call_procedure(self, procedure_name, kwargs):
         """ call a procedure, all arguments must be passed as kwargs
         """
-        return self._procedures[name]['fn'](**kwargs)
-
-    def log(self, text):
-        """ logs some information
-        """
-        logging.info("[user logged] {}".format(text))
+        return self._procedures[procedure_name]['fn'](**kwargs)
 
     def _simpyl_log(self, text):
         """ logs information on behalf of simpyl

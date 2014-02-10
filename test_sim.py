@@ -7,7 +7,7 @@ import simpyl
 sl = simpyl.Simpyl()
 
 
-@sl.add_procedure('load', cache=['X.csv', 'y.csv'])
+@sl._add_procedure('load', caches=['X.csv', 'y.csv'])
 def load_data():
     # load the iris dataset
     iris = datasets.load_iris()
@@ -16,7 +16,7 @@ def load_data():
     return X, y
 
 
-@sl.add_procedure('train', cache=['classifier.rf'])
+@sl._add_procedure('train', caches=['classifier.rf'])
 def train_classifier(X_train, y_train, n_estimators=10, min_samples_split=2):
     clf = RandomForestClassifier(n_estimators=n_estimators,
                                  min_samples_split=min_samples_split)
@@ -24,7 +24,7 @@ def train_classifier(X_train, y_train, n_estimators=10, min_samples_split=2):
     return clf
 
 
-@sl.add_procedure('test')
+@sl._add_procedure('test')
 def test_classifier(clf, X, y_true):
     y_pred = clf.predict(X)
     return np.sum(y_pred == y_true) / float(y_pred.size)
@@ -43,4 +43,4 @@ if __name__ == '__main__':
     manual_run()
 
     print("Data from simpyl")
-    print(sl.list_procedures())
+    print(sl._procedures)
