@@ -6,12 +6,15 @@ import errno
 import cPickle
 
 import numpy as np
+
 import database as db
+import webserver
 
 
 class Simpyl(object):
     def __init__(self):
         self._procedures = {}
+        self._procedure_call_templates = {}
 
         # set up logging
         logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s',
@@ -47,21 +50,20 @@ class Simpyl(object):
         def decorator(fn):
             # get argument information
             argspec = inspect.getargspec(fn)
-            arguments = [{'name': arg, 'source': 'manual', 'value': None} for arg in argspec.args]
+            arguments = [dict(name=arg, source='manual', value=None) for arg in argspec.args]
 
             # add the default arguments, these are the at the end of the argument spec
             if argspec.defaults is not None:
                 for i, v in enumerate(reversed(argspec.defaults)):
-                    arguments[-(i+1)]['value'] = v
+                    arguments[-(i + 1)]['value'] = v
 
-            self._procedures[procedure_name] = {'fn': fn, 'arguments': arguments,
-                                                'procedure_name': procedure_name,
-                                                'caches': caches}
+            self._procedures[procedure_name] = fn
+            self._procedure_call_templates[procedure_name] = dict(arguments=arguments, caches=caches)
             return fn
 
         return decorator
 
-    def _run(self, procedures, environment, description):
+    def _run(self, procedure_calls, environment, description):
         # set the current environment
         self._create_environment(environment)
 
@@ -75,35 +77,36 @@ class Simpyl(object):
         self._simpyl_log("run #{} started in environment {}".format(run_id, environment))
 
         # call all the procedures
-        for i, procedure in enumerate(procedures):
+        for order, proc_call in enumerate(procedure_calls):
 
             # run the procedure
             # work out the arguments, loading them from the cache if required
-            kwargs = {kw: value for kw, value in [(arg['name'],
-                                                   arg['value'] if arg['source'] == 'manual'
-                                                   else self._read_cache(arg['value'], environment))
-                                                  for arg in procedure['arguments']]}
+            kwargs = dict((kw, value)
+                          for kw, value in [(arg['name'],
+                                             arg['value'] if arg['source'] == 'manual'
+                                             else self._read_cache(arg['value'], environment))
+                                            for arg in proc_call['arguments']])
             self._simpyl_log("Procedure {} called with arguments {}".format(run_id, kwargs))
             start_time = time.time()
-            results = self._call_procedure(procedure['procedure_name'], kwargs=kwargs)
+            results = self._call_procedure(proc_call['procedure_name'], kwargs=kwargs)
             end_time = time.time()
 
             # store the name of the saved files instead of the raw result if it's cached
-            if procedure['caches'] is not None:
-                results_str = ', '.join(procedure['caches'])
+            if proc_call['caches'] is not None:
+                results_str = ', '.join(proc_call['caches'])
             else:
                 results_str = str(results)
 
             procedure_call_id = db.register_procedure_call(self._db_con, start_time, end_time,
-                                                           procedure['procedure_name'],
-                                                           i, results_str,
-                                                           procedure['kwargs'], run_id)
+                                                           proc_call['procedure_name'],
+                                                           order, results_str,
+                                                           proc_call['arguments'], run_id)
 
-            if procedure['caches'] is not None:
+            if proc_call['caches'] is not None:
                 # make the results iterable if they're not
-                if len(procedure['caches']) == 1:
+                if len(proc_call['caches']) == 1:
                     results = (results,)
-                for result, filename in zip(results, procedure['caches']):
+                for result, filename in zip(results, proc_call['caches']):
                     self._write_cache(results, filename, environment, procedure_call_id)
 
         # update the run in the database to record its completion
@@ -143,3 +146,6 @@ class Simpyl(object):
             with open(os.path.join(environment, 'cache', filename)) as f:
                 obj = cPickle.load(f)
         return obj
+
+    def start(self):
+        webserver.run_server(self)

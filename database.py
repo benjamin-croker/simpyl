@@ -4,16 +4,8 @@ database.py:
 """
 import os
 import sqlite3
+import json
 
-
-def construct_dict(cursor):
-    """ transforms the sqlite cursor rows from table format to a
-        list of dictionary objects
-    """
-    rows = cursor.fetchall()
-    return [dict((cursor.description[i][0], value)
-                 for i, value in enumerate(row))
-            for row in rows]
 
 def reset_database(db_filename='simpyl.db'):
     """ deletes all data in the current database and creates a new one with a default environment entry
@@ -49,7 +41,7 @@ def reset_database(db_filename='simpyl.db'):
         procedure_name TEXT,
         order INTEGER,
         result TEXT,
-        kwargs TEXT,
+        arguments TEXT,
         run_id INTEGER,
         FOREIGN KEY run_id REFERENCES run(id)
     );
@@ -110,12 +102,13 @@ def get_runs(db_con, environment):
 
 
 def register_procedure_call(db_con, start_time, end_time, procedure_name,
-                            order, result, kwargs, run_id):
+                            order, result, arguments, run_id):
     """ adds a procedure call to the database
     """
     # end time and result are None for the time being
     cursor = db_con.execute("INSERT INTO procedure_call VALUES (NULL,?,?,?,?,?,?,?);",
-                            [start_time, end_time, procedure_name, order, result, kwargs, run_id])
+                            [start_time, end_time, procedure_name, order, result,
+                             json.dumps(arguments), run_id])
     procedure_call_id = cursor.lastrowid
     db_con.commit()
     return procedure_call_id
@@ -125,7 +118,7 @@ def get_procedure_calls(db_con, run_id):
     """ gets all procedure calls associated with the given run_id
     """
     cursor = db_con.execute("SELECT * FROM procedure_call WHERE run_id = ?", [run_id])
-    return construct_dict(cursor)
+    return construct_dict(cursor, json_loads=['arguments'])
 
 
 def register_environment(db_con, environment_name):
@@ -187,3 +180,18 @@ def get_cache_filenames(db_con, environment):
     """
     cursor = db_con.execute(_get_cachefile_from_environment_sql, [environment])
     return construct_dict(cursor)
+
+
+def construct_dict(cursor, json_loads=None):
+    """ transforms the sqlite cursor rows from table format to a
+        list of dictionary objects
+
+        json_loads contains a list of columns which are serialized json
+        strings and should be deserialized
+    """
+    if not json_loads: json_loads = []
+    rows = cursor.fetchall()
+    return [dict((cursor.description[i][0], value) if cursor.description[i][0] in json_loads
+                 else (cursor.description[i][0], json.loads(value))
+                 for i, value in enumerate(row))
+            for row in rows]

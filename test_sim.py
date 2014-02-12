@@ -39,8 +39,4 @@ def manual_run():
 
 
 if __name__ == '__main__':
-    print("Manual run")
-    manual_run()
-
-    print("Data from simpyl")
-    print(sl._procedures)
+    sl.start()
