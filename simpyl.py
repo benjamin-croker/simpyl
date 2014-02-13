@@ -14,7 +14,7 @@ import webserver
 class Simpyl(object):
     def __init__(self):
         self._procedures = {}
-        self._procedure_call_templates = {}
+        self._proc_call_inits = {}
 
         # set up logging
         logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s',
@@ -50,7 +50,7 @@ class Simpyl(object):
         def decorator(fn):
             # get argument information
             argspec = inspect.getargspec(fn)
-            arguments = [dict(name=arg, source='manual', value=None) for arg in argspec.args]
+            arguments = [{'name': arg, 'from_cache': False, 'value': None} for arg in argspec.args]
 
             # add the default arguments, these are the at the end of the argument spec
             if argspec.defaults is not None:
@@ -58,59 +58,70 @@ class Simpyl(object):
                     arguments[-(i + 1)]['value'] = v
 
             self._procedures[procedure_name] = fn
-            self._procedure_call_templates[procedure_name] = dict(arguments=arguments, caches=caches)
+            self._proc_call_inits[procedure_name] = dict(arguments=arguments, caches=caches)
             return fn
 
         return decorator
 
-    def _run(self, procedure_calls, environment, description):
+    def _run(self, run_init, environment):
         # set the current environment
         self._create_environment(environment)
 
-        # register run in database and get id
-        run_id = db.register_run(self._db_con, time.time(), description, 'running', environment)
+        # register run in database and create a run result
+        run_result = {'id': None, 'timestamp_start': time.time(), 'timestamp_stop': None,
+                      'status': 'running', 'description': run_init['description']}
+        run_result['id'] = db.register_run_result(self._db_con, run_result, environment)
 
         # set up logging to log to a file
         logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s',
                             datefmt='%Y-%m-%d %H:%M:%S',
-                            filename=os.path.join(environment, 'logs', 'run_{}.log'.format(run_id)))
-        self._simpyl_log("run #{} started in environment {}".format(run_id, environment))
+                            filename=os.path.join(
+                                environment, 'logs', 'run_{}.log'.format(run_result['id'])))
+        self._simpyl_log("run #{} started in environment {}".format(run_result['id'], environment))
 
         # call all the procedures
-        for order, proc_call in enumerate(procedure_calls):
+        for order, proc_init in enumerate(run_init['proc_inits']):
 
             # run the procedure
+            proc_result = {'id': None,
+                           'proc_name': proc_init['proc_name'],
+                           'order': proc_init['order'],
+                           'timestamp_start': time.time(),
+                           'timestamp_stop': None,
+                           'result': None,
+                           'arguments': proc_init['arguments']}
+
             # work out the arguments, loading them from the cache if required
-            kwargs = dict((kw, value)
-                          for kw, value in [(arg['name'],
-                                             arg['value'] if arg['source'] == 'manual'
-                                             else self._read_cache(arg['value'], environment))
-                                            for arg in proc_call['arguments']])
-            self._simpyl_log("Procedure {} called with arguments {}".format(run_id, kwargs))
-            start_time = time.time()
-            results = self._call_procedure(proc_call['procedure_name'], kwargs=kwargs)
-            end_time = time.time()
+            kwargs = dict((kw, value) for kw, value in
+                          [(arg['name'], self._read_cache(arg['value'], environment)
+                          if arg['from_cache'] else arg['value'])
+                           for arg in proc_init['arguments']])
+
+            self._simpyl_log("Procedure {} called with arguments {}".format(run_result['id'], kwargs))
+            results = self._call_procedure(proc_init['proc_name'], kwargs=kwargs)
+
+            proc_result['timestamp_stop'] = time.time()
 
             # store the name of the saved files instead of the raw result if it's cached
-            if proc_call['caches'] is not None:
-                results_str = ', '.join(proc_call['caches'])
+            if proc_init['caches'] is not None:
+                results_str = ', '.join(proc_init['caches'])
             else:
                 results_str = str(results)
+            proc_result['result'] = results_str
 
-            procedure_call_id = db.register_procedure_call(self._db_con, start_time, end_time,
-                                                           proc_call['procedure_name'],
-                                                           order, results_str,
-                                                           proc_call['arguments'], run_id)
+            proc_call_id = db.register_proc_result(self._db_con, proc_result, run_result['id'])
 
-            if proc_call['caches'] is not None:
+            if proc_init['caches'] is not None:
                 # make the results iterable if they're not
-                if len(proc_call['caches']) == 1:
+                if len(proc_init['caches']) == 1:
                     results = (results,)
-                for result, filename in zip(results, proc_call['caches']):
-                    self._write_cache(results, filename, environment, procedure_call_id)
+                for result, filename in zip(results, proc_init['caches']):
+                    self._write_cache(results, filename, environment, proc_call_id)
 
-        # update the run in the database to record its completion
-        db.update_run_status(self._db_con, run_id, 'complete')
+        # register the run result
+        run_result['timestamp_stop'] = time.time()
+        run_result['status'] = 'complete'
+        db.register_run_result(self._db_con, run_result, environment)
 
     def _call_procedure(self, procedure_name, kwargs):
         """ call a procedure, all arguments must be passed as kwargs

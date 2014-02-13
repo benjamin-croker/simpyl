@@ -16,9 +16,10 @@ def reset_database(db_filename='simpyl.db'):
     );
     """,
                           """
-    CREATE TABLE run (
+    CREATE TABLE run_result (
         id INTEGER PRIMARY KEY,
-        timestamp REAL,
+        timestamp_start REAL,
+        timestamp_stop REAL,
         description TEXT,
         status TEXT,
         environment_name TEXT,
@@ -34,12 +35,12 @@ def reset_database(db_filename='simpyl.db'):
     );
     """,
                           """
-    CREATE TABLE procedure_call (
+    CREATE TABLE proc_result (
         id INTEGER PRIMARY KEY,
-        start_time REAL,
-        end_time REAL,
-        procedure_name TEXT,
+        proc_name TEXT,
         order INTEGER,
+        timestamp_start REAL,
+        timestamp_stop REAL,
         result TEXT,
         arguments TEXT,
         run_id INTEGER,
@@ -76,42 +77,59 @@ def close_db_connection(db_con):
     db_con.close()
 
 
-def register_run(db_con, timestamp, description, status, environment_name):
+def register_run_result(db_con, run_result, environment_name):
     """ add information about a run to the database and return the database key for it
     """
-    cursor = db_con.execute("INSERT INTO run VALUES (NULL,?,?,?,?);",
-                            [timestamp, description, status, environment_name])
+    cursor = db_con.execute("INSERT INTO run VALUES (NULL,?,?,?,?,?);",
+                            [run_result['timestamp_start'],
+                             run_result['timestamp_stop'],
+                             run_result['description'],
+                             run_result['status'],
+                             environment_name])
     run_id = cursor.lastrowid
     db_con.commit()
     return run_id
 
 
-def update_run_status(db_con, run_id, status):
-    """ updates a run with a new status, e.g. when it's finished
+def update_run_result(db_con, run_result, environment):
+    """ when a run has finished, only status and timestamp changes
     """
-    db_con.execute("UPDATE run SET status = ? WHERE id = ?;",
-                   [status, run_id])
+    _update_run_result_sql = """
+    UPDATE run SET timestamp_start=?, timestamp_stop=?, description=?, status=?
+    environment_name = ? WHERE id = ?;
+    """
+    db_con.execute(_update_run_result_sql, [run_result['timestamp_start'],
+                                            run_result['timestamp_stop'],
+                                            run_result['description'],
+                                            run_result['status'],
+                                            run_result['environment_name'],
+                                            run_result['id']])
     db_con.commit()
 
 
 def get_runs(db_con, environment):
     """ gets all runs from the given environment
     """
-    cursor = db_con.execute("SELECT * FROM run WHERE environment_name = ?;", [environment])
+    cursor = db_con.execute("SELECT * FROM run WHERE environment_name = ?;",
+                            [environment])
     return construct_dict(cursor)
 
 
-def register_procedure_call(db_con, start_time, end_time, procedure_name,
-                            order, result, arguments, run_id):
+def register_proc_result(db_con, proc_result, run_id):
     """ adds a procedure call to the database
     """
     # end time and result are None for the time being
     cursor = db_con.execute("INSERT INTO procedure_call VALUES (NULL,?,?,?,?,?,?,?);",
-                            [start_time, end_time, procedure_name, order, result,
-                             json.dumps(arguments), run_id])
-    procedure_call_id = cursor.lastrowid
+                            [proc_result['proc_name'],
+                             proc_result['order'],
+                             proc_result['timestamp_start'],
+                             proc_result['timestamp_stop'],
+                             str(proc_result['result']),
+                             json.dumps(proc_result['arguments']),
+                             run_id])
+    proc_result_id = cursor.lastrowid
     db_con.commit()
-    return procedure_call_id
+    return proc_result_id
 
 
 def get_procedure_calls(db_con, run_id):
@@ -141,7 +159,7 @@ def get_environments(db_con):
     return construct_dict(cursor)
 
 
-def register_cached_file(db_con, filename, environment, procedure_call_id):
+def register_cached_file(db_con, filename, environment, proc_result_id):
     """ register that a file was cached as part of the passed procedure call
         if a previous cache file exists, it will be updated
     """
@@ -158,13 +176,13 @@ def register_cached_file(db_con, filename, environment, procedure_call_id):
     # insert a new entry if it doesn't
     if row_id is None:
         db_con.execute("INSERT INTO cachefile VALUES (NULL,?,?);",
-                       [filename, procedure_call_id])
+                       [filename, proc_result_id])
     # update the existing one if it does
     else:
         # get the actual data from
         # row_id = row_id[0]
         db_con.execute("UPDATE cachefile SET procedure_call_id = ? WHERE id = ?;",
-                       [procedure_call_id, row_id])
+                       [proc_result_id, row_id])
 
     db_con.commit()
 

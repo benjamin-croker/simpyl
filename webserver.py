@@ -11,8 +11,8 @@ def index():
 
 @app.route('/api/procedures')
 def get_procedures():
-    print sl._procedure_call_templates
-    return json.dumps(sl._procedure_call_templates)
+    print sl._proc_call_inits
+    return json.dumps(sl._proc_call_inits)
 
 
 def run_server(simpyl_object):
