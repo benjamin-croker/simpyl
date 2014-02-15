@@ -6,8 +6,18 @@ import os
 import sqlite3
 import json
 
+DB_FILENAME = 'simpyl.db'
 
-def reset_database(db_filename='simpyl.db'):
+def with_db(fn):
+    """ decorator to handle opening and closing of database connections
+    """
+    def new_fn(*args, **kwargs):
+        db_con = open_db_connection(DB_FILENAME)
+        return fn(db_con, *args, **kwargs)
+    return new_fn
+
+
+def reset_database(db_filename=DB_FILENAME):
     """ deletes all data in the current database and creates a new one with a default environment entry
     """
     _create_tables_sql = ["""
@@ -64,7 +74,7 @@ def reset_database(db_filename='simpyl.db'):
     db_con.close()
 
 
-def open_db_connection(db_filename):
+def open_db_connection(db_filename=DB_FILENAME):
     """ returns a connection to the database
     """
     return sqlite3.connect(db_filename)
@@ -77,6 +87,7 @@ def close_db_connection(db_con):
     db_con.close()
 
 
+@with_db
 def register_run_result(db_con, run_result, environment_name):
     """ add information about a run to the database and return the database key for it
     """
@@ -86,12 +97,12 @@ def register_run_result(db_con, run_result, environment_name):
                              run_result['description'],
                              run_result['status'],
                              environment_name])
-    run_id = cursor.lastrowid
-    db_con.commit()
-    return run_id
+    # return the run id you just entered
+    return cursor.lastrowid
 
 
-def update_run_result(db_con, run_result, environment):
+@with_db
+def update_run_result(db_con, run_result):
     """ when a run has finished, only status and timestamp changes
     """
     _update_run_result_sql = """
@@ -104,9 +115,9 @@ def update_run_result(db_con, run_result, environment):
                                             run_result['status'],
                                             run_result['environment_name'],
                                             run_result['id']])
-    db_con.commit()
 
 
+@with_db
 def get_runs(db_con, environment):
     """ gets all runs from the given environment
     """
@@ -115,6 +126,7 @@ def get_runs(db_con, environment):
     return construct_dict(cursor)
 
 
+@with_db
 def register_proc_result(db_con, proc_result, run_id):
     """ adds a procedure call to the database
     """
@@ -128,37 +140,46 @@ def register_proc_result(db_con, proc_result, run_id):
                              json.dumps(proc_result['arguments']),
                              run_id])
     proc_result_id = cursor.lastrowid
-    db_con.commit()
     return proc_result_id
 
 
+@with_db
 def get_procedure_calls(db_con, run_id):
     """ gets all procedure calls associated with the given run_id
     """
+    db_con = open_db_connection()
     cursor = db_con.execute("SELECT * FROM procedure_call WHERE run_id = ?", [run_id])
+    close_db_connection(db_con)
     return construct_dict(cursor, json_loads=['arguments'])
 
 
+@with_db
 def register_environment(db_con, environment_name):
     """ adds an environment to the database if it doesn't exist.
         returns True if a new environment was created
     """
+    db_con = open_db_connection()
     try:
         db_con.execute("INSERT INTO environment VALUES (?);",
                        [environment_name])
-        db_con.commit()
+        close_db_connection(db_con)
         return True
     except sqlite3.IntegrityError:
+        close_db_connection(db_con)
         return False
 
 
+@with_db
 def get_environments(db_con):
     """ gets a list of all environments
     """
+    db_con = open_db_connection()
     cursor = db_con.execute("SELECT * FROM environment")
+    close_db_connection(db_con)
     return construct_dict(cursor)
 
 
+@with_db
 def register_cached_file(db_con, filename, environment, proc_result_id):
     """ register that a file was cached as part of the passed procedure call
         if a previous cache file exists, it will be updated
@@ -187,6 +208,7 @@ def register_cached_file(db_con, filename, environment, proc_result_id):
     db_con.commit()
 
 
+@with_db
 def get_cache_filenames(db_con, environment):
     """ gets all files cached in a given environment
     """
@@ -200,6 +222,7 @@ def get_cache_filenames(db_con, environment):
     return construct_dict(cursor)
 
 
+@with_db
 def construct_dict(cursor, json_loads=None):
     """ transforms the sqlite cursor rows from table format to a
         list of dictionary objects

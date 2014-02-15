@@ -19,8 +19,7 @@ class Simpyl(object):
         # set up logging
         logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s',
                             datefmt='%Y-%m-%d %H:%M:%S')
-        # open a database connection
-        self._db_con = db.open_db_connection('simpyl.db')
+
 
     def log(self, text):
         """ logs some information
@@ -46,7 +45,7 @@ class Simpyl(object):
         # register the environment in the database and set the current env
         db.register_environment(self._db_con, environment_name)
 
-    def _add_procedure(self, procedure_name, caches=None):
+    def add_procedure(self, procedure_name, caches=None):
         def decorator(fn):
             # get argument information
             argspec = inspect.getargspec(fn)
@@ -121,7 +120,7 @@ class Simpyl(object):
         # register the run result
         run_result['timestamp_stop'] = time.time()
         run_result['status'] = 'complete'
-        db.register_run_result(self._db_con, run_result, environment)
+        db.register_run_result(self._db_con, run_result)
 
     def _call_procedure(self, procedure_name, kwargs):
         """ call a procedure, all arguments must be passed as kwargs
