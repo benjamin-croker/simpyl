@@ -2,6 +2,8 @@ import json
 import os
 from flask import Flask, request, abort
 
+import run_manager as runm
+
 app = Flask(__name__)
 sl = None
 
@@ -12,7 +14,7 @@ def index():
 
 @app.route('/api/procedures')
 def get_procedures():
-    return json.dumps(sl._proc_call_inits)
+    return json.dumps(sl.proc_call_inits)
 
 
 @app.route('/api/envs')
@@ -25,7 +27,7 @@ def new_environment():
     print request.json
     if not request.json or not 'name' in request.json:
         abort(400)
-    sl._create_environment(request.json['name'])
+    runm.create_environment(request.json['name'])
     return json.dumps({'name': request.json['name']}), 201
 
 

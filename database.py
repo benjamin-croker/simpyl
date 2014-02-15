@@ -222,7 +222,6 @@ def get_cache_filenames(db_con, environment):
     return construct_dict(cursor)
 
 
-@with_db
 def construct_dict(cursor, json_loads=None):
     """ transforms the sqlite cursor rows from table format to a
         list of dictionary objects
