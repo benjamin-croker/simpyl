@@ -5,8 +5,8 @@ import webserver
 
 class Simpyl(object):
     def __init__(self):
-        self.procedures = {}
-        self.proc_call_inits = {}
+        self._procedures = {}
+        self._proc_inits = []
 
         # set up logging
         logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s',
@@ -28,8 +28,9 @@ class Simpyl(object):
                 for i, v in enumerate(reversed(argspec.defaults)):
                     arguments[-(i + 1)]['value'] = v
 
-            self.procedures[procedure_name] = fn
-            self.proc_call_inits[procedure_name] = dict(arguments=arguments, caches=caches)
+            self._procedures[procedure_name] = fn
+            self._proc_inits += [{'proc_name': procedure_name, 'arguments': arguments,
+                                      'cache': caches, 'run_order': None}]
             return fn
 
         return decorator
@@ -37,7 +38,10 @@ class Simpyl(object):
     def call_procedure(self, procedure_name, kwargs):
         """ call a procedure, all arguments must be passed as kwargs
         """
-        return self.procedures[procedure_name]['fn'](**kwargs)
+        return self._procedures[procedure_name]['fn'](**kwargs)
+
+    def get_proc_inits(self):
+        return {'proc_inits': self._proc_inits}
 
     def start(self):
         webserver.run_server(self)

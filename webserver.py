@@ -12,9 +12,9 @@ def index():
     return "simpyl!"
 
 
-@app.route('/api/procedures')
+@app.route('/api/proc_inits')
 def get_procedures():
-    return json.dumps(sl.proc_call_inits)
+    return json.dumps(sl.get_proc_inits())
 
 
 @app.route('/api/envs')
