@@ -8,12 +8,16 @@ import json
 
 DB_FILENAME = 'simpyl.db'
 
+
 def with_db(fn):
     """ decorator to handle opening and closing of database connections
     """
     def new_fn(*args, **kwargs):
-        db_con = open_db_connection(DB_FILENAME)
-        return fn(db_con, *args, **kwargs)
+        db_con = sqlite3.connect(DB_FILENAME)
+        result = fn(db_con, *args, **kwargs)
+        db_con.commit()
+        db_con.close()
+        return result
     return new_fn
 
 
@@ -33,7 +37,7 @@ def reset_database(db_filename=DB_FILENAME):
         description TEXT,
         status TEXT,
         environment_name TEXT,
-        FOREIGN KEY environment_name REFERENCES enviromnent(name)
+        FOREIGN KEY(environment_name) REFERENCES enviromnent(name)
     );
     """,
                           """
@@ -41,20 +45,20 @@ def reset_database(db_filename=DB_FILENAME):
         id INTEGER PRIMARY KEY,
         filename TEXT,
         procedure_call_id INTEGER,
-        FOREIGN KEY procedure_call_id REFERENCES procedure_call(id)
+        FOREIGN KEY(procedure_call_id) REFERENCES procedure_call(id)
     );
     """,
                           """
     CREATE TABLE proc_result (
         id INTEGER PRIMARY KEY,
         proc_name TEXT,
-        order INTEGER,
+        run_order INTEGER,
         timestamp_start REAL,
         timestamp_stop REAL,
         result TEXT,
         arguments TEXT,
         run_id INTEGER,
-        FOREIGN KEY run_id REFERENCES run(id)
+        FOREIGN KEY(run_id) REFERENCES run(id)
     );
     """]
 
@@ -65,24 +69,11 @@ def reset_database(db_filename=DB_FILENAME):
         pass
 
     # create the database tables
-    db_con = open_db_connection(db_filename)
+    db_con = sqlite3.connect(db_filename)
     for _create_table_sql in _create_tables_sql:
         db_con.execute(_create_table_sql)
-        # create the default environment
+    # create the default environment
     db_con.execute("INSERT INTO environment VALUES (?);", ['default'])
-    db_con.commit()
-    db_con.close()
-
-
-def open_db_connection(db_filename=DB_FILENAME):
-    """ returns a connection to the database
-    """
-    return sqlite3.connect(db_filename)
-
-
-def close_db_connection(db_con):
-    """ closes database connection and commits any changes
-    """
     db_con.commit()
     db_con.close()
 
@@ -133,7 +124,7 @@ def register_proc_result(db_con, proc_result, run_id):
     # end time and result are None for the time being
     cursor = db_con.execute("INSERT INTO procedure_call VALUES (NULL,?,?,?,?,?,?,?);",
                             [proc_result['proc_name'],
-                             proc_result['order'],
+                             proc_result['run_order'],
                              proc_result['timestamp_start'],
                              proc_result['timestamp_stop'],
                              str(proc_result['result']),
@@ -147,9 +138,7 @@ def register_proc_result(db_con, proc_result, run_id):
 def get_procedure_calls(db_con, run_id):
     """ gets all procedure calls associated with the given run_id
     """
-    db_con = open_db_connection()
     cursor = db_con.execute("SELECT * FROM procedure_call WHERE run_id = ?", [run_id])
-    close_db_connection(db_con)
     return construct_dict(cursor, json_loads=['arguments'])
 
 
@@ -158,14 +147,11 @@ def register_environment(db_con, environment_name):
     """ adds an environment to the database if it doesn't exist.
         returns True if a new environment was created
     """
-    db_con = open_db_connection()
     try:
         db_con.execute("INSERT INTO environment VALUES (?);",
                        [environment_name])
-        close_db_connection(db_con)
         return True
     except sqlite3.IntegrityError:
-        close_db_connection(db_con)
         return False
 
 
@@ -173,9 +159,7 @@ def register_environment(db_con, environment_name):
 def get_environments(db_con):
     """ gets a list of all environments
     """
-    db_con = open_db_connection()
     cursor = db_con.execute("SELECT * FROM environment")
-    close_db_connection(db_con)
     return construct_dict(cursor)
 
 
@@ -231,7 +215,8 @@ def construct_dict(cursor, json_loads=None):
     """
     if not json_loads: json_loads = []
     rows = cursor.fetchall()
-    return [dict((cursor.description[i][0], value) if cursor.description[i][0] in json_loads
-                 else (cursor.description[i][0], json.loads(value))
+    return [dict((cursor.description[i][0], json.loads(value))
+                 if cursor.description[i][0] in json_loads
+                 else (cursor.description[i][0], value)
                  for i, value in enumerate(row))
             for row in rows]

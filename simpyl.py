@@ -1,12 +1,5 @@
 import inspect
 import logging
-import time
-import os
-import cPickle
-
-import numpy as np
-
-import database as db
 import webserver
 
 
@@ -35,8 +28,8 @@ class Simpyl(object):
                 for i, v in enumerate(reversed(argspec.defaults)):
                     arguments[-(i + 1)]['value'] = v
 
-            self._procedures[procedure_name] = fn
-            self._proc_call_inits[procedure_name] = dict(arguments=arguments, caches=caches)
+            self.procedures[procedure_name] = fn
+            self.proc_call_inits[procedure_name] = dict(arguments=arguments, caches=caches)
             return fn
 
         return decorator
@@ -44,7 +37,7 @@ class Simpyl(object):
     def call_procedure(self, procedure_name, kwargs):
         """ call a procedure, all arguments must be passed as kwargs
         """
-        return self._procedures[procedure_name]['fn'](**kwargs)
+        return self.procedures[procedure_name]['fn'](**kwargs)
 
     def start(self):
         webserver.run_server(self)

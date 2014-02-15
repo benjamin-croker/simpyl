@@ -59,7 +59,12 @@ def create_environment(environment_name):
     create_dir_if_needed(os.path.join('envs', environment_name, 'cache'))
 
     # register the environment in the database and set the current env
-    db.register_environment(environment_name)
+    reg=db.register_environment(environment_name)
+    print "DB registered {}".format(reg)
+
+def get_environments():
+    print db.get_environments()
+    return {'environment_names': [e['name'] for e in db.get_environments()]}
 
 
 def run(sl, run_init, environment):
@@ -79,12 +84,12 @@ def run(sl, run_init, environment):
         simpyl_log("run #{} started in environment {}".format(run_result['id'], environment))
 
         # call all the procedures
-        for order, proc_init in enumerate(run_init['proc_inits']):
+        for run_order, proc_init in enumerate(run_init['proc_inits']):
 
             # run the procedure
             proc_result = {'id': None,
                            'proc_name': proc_init['proc_name'],
-                           'order': proc_init['order'],
+                           'run_order': proc_init['run_order'],
                            'timestamp_start': time.time(),
                            'timestamp_stop': None,
                            'result': None,

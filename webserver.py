@@ -19,7 +19,7 @@ def get_procedures():
 
 @app.route('/api/envs')
 def list_environments():
-    return json.dumps({'environment_names': os.listdir('envs')})
+    return json.dumps(runm.get_environments())
 
 
 @app.route('/api/newenv', methods=['POST'])
