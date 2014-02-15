@@ -39,9 +39,9 @@ class Simpyl(object):
                 if exception.errno != errno.EEXIST:
                     raise
 
-        create_dir_if_needed(environment_name)
-        create_dir_if_needed(os.path.join(environment_name, 'logs'))
-        create_dir_if_needed(os.path.join(environment_name, 'cache'))
+        create_dir_if_needed(os.path.join('envs', environment_name))
+        create_dir_if_needed(os.path.join('envs', environment_name, 'logs'))
+        create_dir_if_needed(os.path.join('envs', environment_name, 'cache'))
 
         # register the environment in the database and set the current env
         db.register_environment(self._db_con, environment_name)
