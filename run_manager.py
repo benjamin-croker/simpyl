@@ -133,4 +133,4 @@ def run(sl, run_init):
         # register the run result
         run_result['timestamp_stop'] = time.time()
         run_result['status'] = 'complete'
-        db.register_run_result(run_result)
+        db.update_run_result(run_result)

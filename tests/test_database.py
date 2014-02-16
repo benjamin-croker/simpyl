@@ -22,6 +22,7 @@ class TestDatabaseBaseSetup(unittest.TestCase):
 
     def setUp(self):
         db.reset_database('test.db')
+        # set some fake data to test with
         self.run_results = [{'id': None,
                            'timestamp_start': 12345.0,
                            'timestamp_stop': None,
@@ -83,9 +84,26 @@ class TestDatabaseBaseSetup(unittest.TestCase):
                                 ]}
                            ]}]
 
+
+class TestDatabaseEnvironment(TestDatabaseBaseSetup):
+    def test_register_environment(self):
+        """ Test an environment can be added to the database and read back
+        """
+        # the default should already exist
+        environments = db.get_environments()
+        self.assertEqual(environments, [{'name': 'default'}])
+
+        # add a new one
+        db.register_environment('newenv')
+        environments = db.get_environments()
+        self.assertEqual(environments, [{'name': 'default'}, {'name': 'newenv'}])
+
+
+
 class TestDatabaseRunResult(TestDatabaseBaseSetup):
     def test_register_run_result(self):
-        # check it was inserted properly
+        """ Test that a run result can be inserted into the database
+        """
         run_id = db.register_run_result(self.run_results[0])
         self.assertIsNotNone(run_id)
 
@@ -107,6 +125,8 @@ class TestDatabaseRunResult(TestDatabaseBaseSetup):
         self.assertEqual(len(runs), 2)
 
     def test_update_run_result(self):
+        """ Test a run result can be updated
+        """
         run_id = db.register_run_result(self.run_results[0])
         self.run_results[0]['id'] = run_id
         self.run_results[0]['timestamp_stop'] = 12400
@@ -119,9 +139,23 @@ class TestDatabaseRunResult(TestDatabaseBaseSetup):
         run_results = db.get_single_run_result(self.run_results[0]['id'])
         self.assertEqual(run_results[0], self.run_results[0])
 
+    def test_get_run_results(self):
+        """ check the correct runs are returned for the specified environments
+        """
+        for run in self.run_results:
+            run_id = db.register_run_result(run)
+            run['id'] = run_id
+
+        runs = db.get_run_results('default')
+        self.assertEqual(len(runs), 2)
+        runs = db.get_run_results('does_not_exists')
+        self.assertEqual(len(runs), 0)
+
 
 class TestDatabaseProcResult(TestDatabaseBaseSetup):
     def test_register_proc_result(self):
+        """ Test a procedure call can be inserted into the database
+        """
         # check insert a procedure result
         proc_id = db.register_proc_result(self.run_results[0]['proc_results'][0])
         self.assertIsNotNone(proc_id)
@@ -144,6 +178,8 @@ class TestDatabaseProcResult(TestDatabaseBaseSetup):
         self.assertEqual(len(procs), 2)
 
     def test_get_proc_results(self):
+        """ Test a procedure call can be read back correctly
+        """
         # insert runs and procedures
         for run in self.run_results:
             run_id = db.register_run_result(run)
