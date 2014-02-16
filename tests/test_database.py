@@ -18,71 +18,71 @@ class TestDatabaseInit(unittest.TestCase):
         self.assertEqual(cachefilenames, [])
         self.assertEqual(environments, [{'name': 'default'}])
 
-class TestDatabaseBaseSetup(unittest.TestCase):
 
+class TestDatabaseBaseSetup(unittest.TestCase):
     def setUp(self):
         db.reset_database('test.db')
         # set some fake data to test with
         self.run_results = [{'id': None,
-                           'timestamp_start': 12345.0,
-                           'timestamp_stop': None,
-                           'status': 'running',
-                           'description': 'test_run',
-                           'environment_name': 'default',
-                           'proc_results': [
-                               {'id': None,
-                                'proc_name': 'foo',
-                                'run_order': 0,
-                                'timestamp_start': 12345.0,
-                                'timestamp_stop': 12346.0,
-                                'result': '42',
-                                'run_result_id': None,
-                                'arguments': [
-                                    {'name': 'a', 'value': '2', 'from_cache': False},
-                                    {'name': 'b', 'value': '3', 'from_cache': False}
-                                ]},
-                               {'id': None,
-                                'proc_name': 'bar',
-                                'run_order': 1,
-                                'timestamp_start': 12346.0,
-                                'timestamp_stop': 12400.0,
-                                'result': '123',
-                                'run_result_id': None,
-                                'arguments': [
-                                    {'name': 'aa', 'value': '20', 'from_cache': False},
-                                    {'name': 'bb', 'value': '30', 'from_cache': False}
-                                ]}
-                           ]},
+                             'timestamp_start': 12345.0,
+                             'timestamp_stop': None,
+                             'status': 'running',
+                             'description': 'test_run',
+                             'environment_name': 'default',
+                             'proc_results': [
+                                 {'id': None,
+                                  'proc_name': 'foo',
+                                  'run_order': 0,
+                                  'timestamp_start': 12345.0,
+                                  'timestamp_stop': 12346.0,
+                                  'result': '42',
+                                  'run_result_id': None,
+                                  'arguments': [
+                                      {'name': 'a', 'value': '2', 'from_cache': False},
+                                      {'name': 'b', 'value': '3', 'from_cache': False}
+                                  ]},
+                                 {'id': None,
+                                  'proc_name': 'bar',
+                                  'run_order': 1,
+                                  'timestamp_start': 12346.0,
+                                  'timestamp_stop': 12400.0,
+                                  'result': '123',
+                                  'run_result_id': None,
+                                  'arguments': [
+                                      {'name': 'aa', 'value': '20', 'from_cache': False},
+                                      {'name': 'bb', 'value': '30', 'from_cache': False}
+                                  ]}
+                             ]},
                             {'id': None,
-                           'timestamp_start': 11111,
-                           'timestamp_stop': None,
-                           'status': 'running',
-                           'description': 'test_run',
-                           'environment_name': 'default',
-                           'proc_results': [
-                               {'id': None,
-                                'proc_name': 'foo',
-                                'run_order': 0,
-                                'timestamp_start': 11111.0,
-                                'timestamp_stop': 11112.0,
-                                'result': '42',
-                                'run_result_id': None,
-                                'arguments': [
-                                    {'name': 'a', 'value': '2', 'from_cache': False},
-                                    {'name': 'b', 'value': '3', 'from_cache': False}
-                                ]},
-                               {'id': None,
-                                'proc_name': 'bar',
-                                'run_order': 1,
-                                'timestamp_start': 11112.0,
-                                'timestamp_stop': 22222.0,
-                                'result': '123',
-                                'run_result_id': None,
-                                'arguments': [
-                                    {'name': 'aa', 'value': '20', 'from_cache': False},
-                                    {'name': 'bb', 'value': '30', 'from_cache': False}
-                                ]}
-                           ]}]
+                             'timestamp_start': 11111,
+                             'timestamp_stop': None,
+                             'status': 'running',
+                             'description': 'test_run',
+                             'environment_name': 'default',
+                             'proc_results': [
+                                 {'id': None,
+                                  'proc_name': 'foo',
+                                  'run_order': 0,
+                                  'timestamp_start': 11111.0,
+                                  'timestamp_stop': 11112.0,
+                                  'result': '42',
+                                  'run_result_id': None,
+                                  'arguments': [
+                                      {'name': 'a', 'value': '2', 'from_cache': False},
+                                      {'name': 'b', 'value': '3', 'from_cache': False}
+                                  ]},
+                                 {'id': None,
+                                  'proc_name': 'bar',
+                                  'run_order': 1,
+                                  'timestamp_start': 11112.0,
+                                  'timestamp_stop': 22222.0,
+                                  'result': '123',
+                                  'run_result_id': None,
+                                  'arguments': [
+                                      {'name': 'aa', 'value': '20', 'from_cache': False},
+                                      {'name': 'bb', 'value': '30', 'from_cache': False}
+                                  ]}
+                             ]}]
 
 
 class TestDatabaseEnvironment(TestDatabaseBaseSetup):
@@ -94,10 +94,12 @@ class TestDatabaseEnvironment(TestDatabaseBaseSetup):
         self.assertEqual(environments, [{'name': 'default'}])
 
         # add a new one
-        db.register_environment('newenv')
+        self.assertIsNotNone(db.register_environment('newenv'))
         environments = db.get_environments()
         self.assertEqual(environments, [{'name': 'default'}, {'name': 'newenv'}])
 
+        # check we can't insert the same one
+        self.assertIsNone(db.register_environment('newenv'))
 
 
 class TestDatabaseRunResult(TestDatabaseBaseSetup):
@@ -193,6 +195,68 @@ class TestDatabaseProcResult(TestDatabaseBaseSetup):
         # check the two procedures were registered for each run
         procs = db.get_proc_results(self.run_results[0]['id'])
         self.assertEqual(procs, self.run_results[0]['proc_results'])
+
+
+class TestDatabaseCachefile(TestDatabaseBaseSetup):
+    def test_register_cached_file(self):
+        # insert runs and procedures
+        for run in self.run_results:
+            run_id = db.register_run_result(run)
+            run['id'] = run_id
+
+            for proc in run['proc_results']:
+                proc['run_result_id'] = run_id
+                proc_id = db.register_proc_result(proc)
+                proc['id'] = proc_id
+
+        # register a file was cached, this should be the first time it's entered
+        id_initial = db.register_cached_file(
+            'fakefile1.txt',
+            'default',
+            self.run_results[0]['proc_results'][0]['id'])
+
+        # update the same file
+        id_update = db.register_cached_file(
+            'fakefile1.txt',
+            'default',
+            self.run_results[0]['proc_results'][0]['id'])
+        self.assertEqual(id_initial, id_update)
+
+        # insert a new file
+        id_new = db.register_cached_file(
+            'fakefile2.txt',
+            'default',
+            self.run_results[0]['proc_results'][0]['id'])
+        self.assertNotEqual(id_new, id_initial)
+
+    def test_get_cache_filenames(self):
+        # insert runs and procedures
+        for run in self.run_results:
+            run_id = db.register_run_result(run)
+            run['id'] = run_id
+
+            for proc in run['proc_results']:
+                proc['run_result_id'] = run_id
+                proc_id = db.register_proc_result(proc)
+                proc['id'] = proc_id
+
+        id1 = db.register_cached_file(
+            'fakefile1.txt',
+            'default',
+            self.run_results[0]['proc_results'][0]['id'])
+
+        id2 = db.register_cached_file(
+            'fakefile2.txt',
+            'default',
+            self.run_results[0]['proc_results'][1]['id'])
+
+        cachedfiles = db.get_cache_filenames('default')
+        # update the same file
+        self.assertEqual(cachedfiles,
+                         [{'id': id1, 'filename': 'fakefile1.txt',
+                           'proc_result_id': self.run_results[0]['proc_results'][0]['id']},
+                          {'id': id2, 'filename': 'fakefile2.txt',
+                           'proc_result_id': self.run_results[0]['proc_results'][1]['id']}])
 
 
 if __name__ == '__main__':

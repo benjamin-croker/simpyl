@@ -12,12 +12,14 @@ DB_FILENAME = 'simpyl.db'
 def with_db(fn):
     """ decorator to handle opening and closing of database connections
     """
+
     def new_fn(*args, **kwargs):
         db_con = sqlite3.connect(DB_FILENAME)
         result = fn(db_con, *args, **kwargs)
         db_con.commit()
         db_con.close()
         return result
+
     return new_fn
 
 
@@ -76,7 +78,7 @@ def reset_database(db_filename=DB_FILENAME):
     db_con = sqlite3.connect(db_filename)
     for _create_table_sql in _create_tables_sql:
         db_con.execute(_create_table_sql)
-    # create the default environment
+        # create the default environment
     db_con.execute("INSERT INTO environment VALUES (?);", ['default'])
     db_con.commit()
     db_con.close()
@@ -117,6 +119,7 @@ def update_run_result(db_con, run_result):
                                             run_result['status'],
                                             run_result['environment_name'],
                                             run_result['id']])
+    return run_result['id']
 
 
 @with_db
@@ -180,9 +183,9 @@ def register_environment(db_con, environment_name):
     try:
         db_con.execute("INSERT INTO environment VALUES (?);",
                        [environment_name])
-        return True
+        return environment_name
     except sqlite3.IntegrityError:
-        return False
+        return None
 
 
 @with_db
@@ -196,12 +199,12 @@ def get_environments(db_con):
 @with_db
 def register_cached_file(db_con, filename, environment, proc_result_id):
     """ register that a file was cached as part of the passed procedure call
-        if a previous cache file exists, it will be updated
+        if a previous cache file exists, it will be updated. Returns
     """
     _get_current_cachefile_id_sql = """
     SELECT CF.id FROM cachefile as CF
     JOIN proc_result as PC ON PC.id = CF.proc_result_id
-    JOIN run as R ON R.id = PC.run_result_id
+    JOIN run_result as R ON R.id = PC.run_result_id
     WHERE R.environment_name = ? and CF.filename = ?
     """
 
@@ -210,16 +213,17 @@ def register_cached_file(db_con, filename, environment, proc_result_id):
     row_id = cursor.fetchone()
     # insert a new entry if it doesn't
     if row_id is None:
-        db_con.execute("INSERT INTO cachefile VALUES (NULL,?,?);",
-                       [filename, proc_result_id])
+        cursor = db_con.execute("INSERT INTO cachefile VALUES (NULL,?,?);",
+                                [filename, proc_result_id])
+        return cursor.lastrowid
+
     # update the existing one if it does
     else:
-        # get the actual data from
-        # row_id = row_id[0]
-        db_con.execute("UPDATE cachefile SET procedure_call_id = ? WHERE id = ?;",
+        # get the actual row id from the query results
+        row_id = row_id[0]
+        db_con.execute("UPDATE cachefile SET proc_result_id = ? WHERE id = ?;",
                        [proc_result_id, row_id])
-
-    db_con.commit()
+        return row_id
 
 
 @with_db

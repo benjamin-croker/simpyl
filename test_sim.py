@@ -6,6 +6,7 @@ from simpyl import Simpyl
 
 sl = Simpyl()
 
+SEED = 12345
 
 @sl.add_procedure('load', caches=['X.csv', 'y.csv'])
 def load_data():
@@ -19,7 +20,8 @@ def load_data():
 @sl.add_procedure('train', caches=['classifier.rf'])
 def train_classifier(X_train, y_train, n_estimators=10, min_samples_split=2):
     clf = RandomForestClassifier(n_estimators=n_estimators,
-                                 min_samples_split=min_samples_split)
+                                 min_samples_split=min_samples_split,
+                                 random_state=SEED)
     clf.fit(X_train, y_train)
     return clf
 
