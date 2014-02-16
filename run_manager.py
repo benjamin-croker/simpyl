@@ -42,7 +42,7 @@ def simpyl_log(text):
     logging.info("[simpyl logged] {}".format(text))
 
 
-def create_environment(environment_name):
+def set_environment(environment_name):
     """ creates all the necessary directories and database entries for a new environment
         will have no effect if the environment already exists
     """
@@ -59,29 +59,36 @@ def create_environment(environment_name):
     create_dir_if_needed(os.path.join('envs', environment_name, 'cache'))
 
     # register the environment in the database and set the current env
-    reg=db.register_environment(environment_name)
+    reg = db.register_environment(environment_name)
     print "DB registered {}".format(reg)
+
 
 def get_environments():
     print db.get_environments()
     return {'environment_names': [e['name'] for e in db.get_environments()]}
 
 
-def run(sl, run_init, environment):
-        # set the current environment
-        create_environment(environment)
+def run(sl, run_init):
+        # set or create the current environment
+        set_environment(run_init['environment_name'])
 
         # register run in database and create a run result
-        run_result = {'id': None, 'timestamp_start': time.time(), 'timestamp_stop': None,
-                      'status': 'running', 'description': run_init['description']}
-        run_result['id'] = db.register_run_result(run_result, environment)
+        run_result = {'id': None,
+                      'timestamp_start': time.time(),
+                      'timestamp_stop': None,
+                      'status': 'running',
+                      'description': run_init['description'],
+                      'environment_name': run_init['environment_name']}
+        run_result['id'] = db.register_run_result(run_result)
 
         # set up logging to log to a file
         logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s',
                             datefmt='%Y-%m-%d %H:%M:%S',
                             filename=os.path.join(
-                                environment, 'logs', 'run_{}.log'.format(run_result['id'])))
-        simpyl_log("run #{} started in environment {}".format(run_result['id'], environment))
+                                run_init['environment'],
+                                'logs',
+                                'run_{}.log'.format(run_result['id'])))
+        simpyl_log("run #{} started in environment {}".format(run_result['id'], run_result['environment']))
 
         # call all the procedures
         for run_order, proc_init in enumerate(run_init['proc_inits']):
@@ -93,11 +100,12 @@ def run(sl, run_init, environment):
                            'timestamp_start': time.time(),
                            'timestamp_stop': None,
                            'result': None,
-                           'arguments': proc_init['arguments']}
+                           'arguments': proc_init['arguments'],
+                           'run_id': run_result['id']}
 
             # work out the arguments, loading them from the cache if required
             kwargs = dict((kw, value) for kw, value in
-                          [(arg['name'], read_cache(arg['value'], environment)
+                          [(arg['name'], read_cache(arg['value'], run_result['environment_name'])
                           if arg['from_cache'] else arg['value'])
                            for arg in proc_init['arguments']])
 
@@ -113,14 +121,14 @@ def run(sl, run_init, environment):
                 results_str = str(results)
             proc_result['result'] = results_str
 
-            proc_call_id = db.register_proc_result(proc_result, run_result['id'])
+            proc_result_id = db.register_proc_result(proc_result, run_result['id'])
 
             if proc_init['caches'] is not None:
                 # make the results iterable if they're not
                 if len(proc_init['caches']) == 1:
                     results = (results,)
                 for result, filename in zip(results, proc_init['caches']):
-                    write_cache(results, filename, environment, proc_call_id)
+                    write_cache(results, filename, run_result['environment_name'], proc_result_id)
 
         # register the run result
         run_result['timestamp_stop'] = time.time()

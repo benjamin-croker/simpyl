@@ -27,7 +27,7 @@ def new_environment():
     print request.json
     if not request.json or not 'name' in request.json:
         abort(400)
-    runm.create_environment(request.json['name'])
+    runm.set_environment(request.json['name'])
     return json.dumps({'name': request.json['name']}), 201
 
 

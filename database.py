@@ -57,8 +57,8 @@ def reset_database(db_filename=DB_FILENAME):
         timestamp_stop REAL,
         result TEXT,
         arguments TEXT,
-        run_id INTEGER,
-        FOREIGN KEY(run_id) REFERENCES run(id)
+        run_result_id INTEGER,
+        FOREIGN KEY(run_result_id) REFERENCES run_result(id)
     );
     """]
 
@@ -83,16 +83,23 @@ def reset_database(db_filename=DB_FILENAME):
 
 
 @with_db
-def register_run_result(db_con, run_result, environment_name):
-    """ add information about a run to the database and return the database key for it
+def register_run_result(db_con, run_result):
+    """ add information about a run to the database and return the database key for it.
+        The id field of run_result must be empty, as this is automatically calculated by the database
+
+        returns the ID of the entered field, or None if it was not created
     """
-    cursor = db_con.execute("INSERT INTO run VALUES (NULL,?,?,?,?,?);",
+    # check that the id field is empty
+    if run_result['id'] is not None:
+        return None
+
+    cursor = db_con.execute("INSERT INTO run_result VALUES (NULL,?,?,?,?,?);",
                             [run_result['timestamp_start'],
                              run_result['timestamp_stop'],
                              run_result['description'],
                              run_result['status'],
-                             environment_name])
-    # return the run id you just entered
+                             run_result['environment_name']])
+    # return the run id just created
     return cursor.lastrowid
 
 
@@ -101,7 +108,7 @@ def update_run_result(db_con, run_result):
     """ when a run has finished, only status and timestamp changes
     """
     _update_run_result_sql = """
-    UPDATE run SET timestamp_start=?, timestamp_stop=?, description=?, status=?
+    UPDATE run_result SET timestamp_start=?, timestamp_stop=?, description=?, status=?,
     environment_name = ? WHERE id = ?;
     """
     db_con.execute(_update_run_result_sql, [run_result['timestamp_start'],
@@ -113,19 +120,37 @@ def update_run_result(db_con, run_result):
 
 
 @with_db
-def get_runs(db_con, environment='*'):
+def get_runs(db_con, environment=None):
     """ gets all runs from the given environment
     """
-    cursor = db_con.execute("SELECT * FROM run_result WHERE environment_name = ?;",
-                            [environment])
+    if environment is None:
+        cursor = db_con.execute("SELECT * FROM run_result;")
+    else:
+        cursor = db_con.execute("SELECT * FROM run_result WHERE environment_name = ?;",
+                                [environment])
+
     return construct_dict(cursor)
 
 
 @with_db
-def register_proc_result(db_con, proc_result, run_id):
-    """ adds a procedure call to the database
+def get_run(db_con, run_result_id):
+    """ gets a specific run
     """
-    # end time and result are None for the time being
+    cursor = db_con.execute("SELECT * FROM run_result WHERE id = ?;", [run_result_id])
+    return construct_dict(cursor)
+
+
+@with_db
+def register_proc_result(db_con, proc_result):
+    """ adds a procedure call to the database
+        The id field of proc_result must be empty, as this is automatically calculated by the database
+
+        returns the ID of the entered field, or None if it was not created
+    """
+    # check that the id field is empty
+    if proc_result['id'] is not None:
+        return None
+
     cursor = db_con.execute("INSERT INTO proc_result VALUES (NULL,?,?,?,?,?,?,?);",
                             [proc_result['proc_name'],
                              proc_result['run_order'],
@@ -133,16 +158,18 @@ def register_proc_result(db_con, proc_result, run_id):
                              proc_result['timestamp_stop'],
                              str(proc_result['result']),
                              json.dumps(proc_result['arguments']),
-                             run_id])
-    proc_result_id = cursor.lastrowid
-    return proc_result_id
+                             proc_result['run_id']])
+    return cursor.lastrowid
 
 
 @with_db
-def get_proc_results(db_con, run_id='*'):
+def get_proc_results(db_con, run_id=None):
     """ gets all procedure calls associated with the given run_id
     """
-    cursor = db_con.execute("SELECT * FROM proc_result WHERE run_id = ?", [run_id])
+    if run_id is None:
+        cursor = db_con.execute("SELECT * FROM proc_result")
+    else:
+        cursor = db_con.execute("SELECT * FROM proc_result WHERE run_result_id = ?", [run_id])
     return construct_dict(cursor, json_loads=['arguments'])
 
 
@@ -175,7 +202,7 @@ def register_cached_file(db_con, filename, environment, proc_result_id):
     _get_current_cachefile_id_sql = """
     SELECT CF.id FROM cachefile as CF
     JOIN proc_result as PC ON PC.id = CF.proc_result_id
-    JOIN run as R ON R.id = PC.run_id
+    JOIN run as R ON R.id = PC.run_result_id
     WHERE R.environment_name = ? and CF.filename = ?
     """
 
@@ -203,7 +230,7 @@ def get_cache_filenames(db_con, environment='*'):
     _get_cachefile_from_environment_sql = """
     SELECT CF.* FROM cachefile as CF
     JOIN proc_result as PC ON PC.id = CF.proc_result_id
-    JOIN run_result as R ON R.id = PC.run_id
+    JOIN run_result as R ON R.id = PC.run_result_id
     WHERE R.environment_name = ?
     """
     cursor = db_con.execute(_get_cachefile_from_environment_sql, [environment])
