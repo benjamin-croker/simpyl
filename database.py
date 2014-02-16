@@ -120,7 +120,7 @@ def update_run_result(db_con, run_result):
 
 
 @with_db
-def get_runs(db_con, environment=None):
+def get_run_results(db_con, environment=None):
     """ gets all runs from the given environment
     """
     if environment is None:
@@ -133,7 +133,7 @@ def get_runs(db_con, environment=None):
 
 
 @with_db
-def get_run(db_con, run_result_id):
+def get_single_run_result(db_con, run_result_id):
     """ gets a specific run
     """
     cursor = db_con.execute("SELECT * FROM run_result WHERE id = ?;", [run_result_id])
@@ -150,7 +150,6 @@ def register_proc_result(db_con, proc_result):
     # check that the id field is empty
     if proc_result['id'] is not None:
         return None
-
     cursor = db_con.execute("INSERT INTO proc_result VALUES (NULL,?,?,?,?,?,?,?);",
                             [proc_result['proc_name'],
                              proc_result['run_order'],
@@ -158,7 +157,7 @@ def register_proc_result(db_con, proc_result):
                              proc_result['timestamp_stop'],
                              str(proc_result['result']),
                              json.dumps(proc_result['arguments']),
-                             proc_result['run_id']])
+                             proc_result['run_result_id']])
     return cursor.lastrowid
 
 
@@ -169,7 +168,7 @@ def get_proc_results(db_con, run_id=None):
     if run_id is None:
         cursor = db_con.execute("SELECT * FROM proc_result")
     else:
-        cursor = db_con.execute("SELECT * FROM proc_result WHERE run_result_id = ?", [run_id])
+        cursor = db_con.execute("SELECT * FROM proc_result WHERE run_result_id = ? ORDER BY run_order", [run_id])
     return construct_dict(cursor, json_loads=['arguments'])
 
 
