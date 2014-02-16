@@ -44,8 +44,8 @@ def reset_database(db_filename=DB_FILENAME):
     CREATE TABLE cachefile (
         id INTEGER PRIMARY KEY,
         filename TEXT,
-        procedure_call_id INTEGER,
-        FOREIGN KEY(procedure_call_id) REFERENCES procedure_call(id)
+        proc_result_id INTEGER,
+        FOREIGN KEY(proc_result_id) REFERENCES proc_result(id)
     );
     """,
                           """
@@ -67,6 +67,10 @@ def reset_database(db_filename=DB_FILENAME):
         os.remove(db_filename)
     except OSError:
         pass
+
+    # set the global database name. This hack should be removed later
+    global DB_FILENAME
+    DB_FILENAME = db_filename
 
     # create the database tables
     db_con = sqlite3.connect(db_filename)
@@ -109,10 +113,10 @@ def update_run_result(db_con, run_result):
 
 
 @with_db
-def get_runs(db_con, environment):
+def get_runs(db_con, environment='*'):
     """ gets all runs from the given environment
     """
-    cursor = db_con.execute("SELECT * FROM run WHERE environment_name = ?;",
+    cursor = db_con.execute("SELECT * FROM run_result WHERE environment_name = ?;",
                             [environment])
     return construct_dict(cursor)
 
@@ -122,7 +126,7 @@ def register_proc_result(db_con, proc_result, run_id):
     """ adds a procedure call to the database
     """
     # end time and result are None for the time being
-    cursor = db_con.execute("INSERT INTO procedure_call VALUES (NULL,?,?,?,?,?,?,?);",
+    cursor = db_con.execute("INSERT INTO proc_result VALUES (NULL,?,?,?,?,?,?,?);",
                             [proc_result['proc_name'],
                              proc_result['run_order'],
                              proc_result['timestamp_start'],
@@ -135,10 +139,10 @@ def register_proc_result(db_con, proc_result, run_id):
 
 
 @with_db
-def get_procedure_calls(db_con, run_id):
+def get_proc_results(db_con, run_id='*'):
     """ gets all procedure calls associated with the given run_id
     """
-    cursor = db_con.execute("SELECT * FROM procedure_call WHERE run_id = ?", [run_id])
+    cursor = db_con.execute("SELECT * FROM proc_result WHERE run_id = ?", [run_id])
     return construct_dict(cursor, json_loads=['arguments'])
 
 
@@ -170,7 +174,7 @@ def register_cached_file(db_con, filename, environment, proc_result_id):
     """
     _get_current_cachefile_id_sql = """
     SELECT CF.id FROM cachefile as CF
-    JOIN procedure_call as PC ON PC.id = CF.procedure_call_id
+    JOIN proc_result as PC ON PC.id = CF.proc_result_id
     JOIN run as R ON R.id = PC.run_id
     WHERE R.environment_name = ? and CF.filename = ?
     """
@@ -193,13 +197,13 @@ def register_cached_file(db_con, filename, environment, proc_result_id):
 
 
 @with_db
-def get_cache_filenames(db_con, environment):
+def get_cache_filenames(db_con, environment='*'):
     """ gets all files cached in a given environment
     """
     _get_cachefile_from_environment_sql = """
     SELECT CF.* FROM cachefile as CF
-    JOIN procedure_call as PC ON PC.id = CF.procedure_call_id
-    JOIN run as R ON R.id = PC.run_id
+    JOIN proc_result as PC ON PC.id = CF.proc_result_id
+    JOIN run_result as R ON R.id = PC.run_id
     WHERE R.environment_name = ?
     """
     cursor = db_con.execute(_get_cachefile_from_environment_sql, [environment])
