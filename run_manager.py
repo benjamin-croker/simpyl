@@ -9,7 +9,7 @@ import numpy as np
 import database as db
 
 
-def write_cache(obj, filename, environment, procedure_call_id):
+def write_cache(obj, filename, environment, proc_result_id):
     """ caches a file with cPickle, unless the filename ends with .csv, then the file will
         be saved as a .csv file. This will only work if the
     """
@@ -22,7 +22,7 @@ def write_cache(obj, filename, environment, procedure_call_id):
 
     # update the database to register the cached file
     simpyl_log("{} written to cache".format(filename))
-    db.register_cached_file(filename, environment, procedure_call_id)
+    db.register_cached_file(filename, environment, proc_result_id)
 
 
 def read_cache(filename, environment):
@@ -40,6 +40,13 @@ def simpyl_log(text):
     """ logs information on behalf of simpyl
     """
     logging.info("[simpyl logged] {}".format(text))
+
+
+def get_log(environment_name, run_id):
+    """ gets the log file for a given environment and run
+    """
+    with open(os.path.join('envs', environment_name, 'logs', run_id)) as f:
+        return ''.join(f.readlines())
 
 
 def set_environment(environment_name):
@@ -61,11 +68,6 @@ def set_environment(environment_name):
     # register the environment in the database and set the current env
     reg = db.register_environment(environment_name)
     print "DB registered {}".format(reg)
-
-
-def get_environments():
-    print db.get_environments()
-    return {'environment_names': [e['name'] for e in db.get_environments()]}
 
 
 def run(sl, run_init):
