@@ -27,7 +27,7 @@ def get_environments():
 def new_environment():
     if not request.json or not 'environment_name' in request.json:
         abort(400)
-    runm.set_environment(request.json['environment_name'])
+    db.register_environment(request.json['environment_name'])
     return json.dumps({'environment_name': request.json['environment_name']}), 201
 
 
@@ -53,6 +53,7 @@ def new_run():
 @app.route('/api/log/<env>/<int:run_id>')
 def get_log(env, run_id):
     return json.dumps({'log': runm.get_log(env, run_id)})
+
 
 def run_server(simpyl_object):
     global sl

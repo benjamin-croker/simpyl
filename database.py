@@ -43,14 +43,6 @@ def reset_database(db_filename=DB_FILENAME):
     );
     """,
                           """
-    CREATE TABLE cachefile (
-        id INTEGER PRIMARY KEY,
-        filename TEXT,
-        proc_result_id INTEGER,
-        FOREIGN KEY(proc_result_id) REFERENCES proc_result(id)
-    );
-    """,
-                          """
     CREATE TABLE proc_result (
         id INTEGER PRIMARY KEY,
         proc_name TEXT,
@@ -123,15 +115,10 @@ def update_run_result(db_con, run_result):
 
 
 @with_db
-def get_run_results(db_con, environment=None):
+def get_run_results(db_con):
     """ gets all runs from the given environment
     """
-    if environment is None:
-        cursor = db_con.execute("SELECT * FROM run_result;")
-    else:
-        cursor = db_con.execute("SELECT * FROM run_result WHERE environment_name = ?;",
-                                [environment])
-
+    cursor = db_con.execute("SELECT * FROM run_result;")
     return construct_dict(cursor)
 
 
@@ -193,50 +180,6 @@ def get_environments(db_con):
     """ gets a list of all environments
     """
     cursor = db_con.execute("SELECT * FROM environment")
-    return construct_dict(cursor)
-
-
-@with_db
-def register_cached_file(db_con, filename, environment, proc_result_id):
-    """ register that a file was cached as part of the passed procedure call
-        if a previous cache file exists, it will be updated. Returns
-    """
-    _get_current_cachefile_id_sql = """
-    SELECT CF.id FROM cachefile as CF
-    JOIN proc_result as PC ON PC.id = CF.proc_result_id
-    JOIN run_result as R ON R.id = PC.run_result_id
-    WHERE R.environment_name = ? and CF.filename = ?
-    """
-
-    # get the id of the current cache file if it exists
-    cursor = db_con.execute(_get_current_cachefile_id_sql, [environment, filename])
-    row_id = cursor.fetchone()
-    # insert a new entry if it doesn't
-    if row_id is None:
-        cursor = db_con.execute("INSERT INTO cachefile VALUES (NULL,?,?);",
-                                [filename, proc_result_id])
-        return cursor.lastrowid
-
-    # update the existing one if it does
-    else:
-        # get the actual row id from the query results
-        row_id = row_id[0]
-        db_con.execute("UPDATE cachefile SET proc_result_id = ? WHERE id = ?;",
-                       [proc_result_id, row_id])
-        return row_id
-
-
-@with_db
-def get_cache_filenames(db_con, environment='*'):
-    """ gets all files cached in a given environment
-    """
-    _get_cachefile_from_environment_sql = """
-    SELECT CF.* FROM cachefile as CF
-    JOIN proc_result as PC ON PC.id = CF.proc_result_id
-    JOIN run_result as R ON R.id = PC.run_result_id
-    WHERE R.environment_name = ?
-    """
-    cursor = db_con.execute(_get_cachefile_from_environment_sql, [environment])
     return construct_dict(cursor)
 
 

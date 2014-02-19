@@ -10,12 +10,10 @@ class TestDatabaseInit(unittest.TestCase):
         # check that all the tables exist and that they are empty, except for environment
         proc_results = db.get_proc_results()
         runs = db.get_run_results()
-        cachefilenames = db.get_cache_filenames()
         environments = db.get_environments()
 
         self.assertEqual(proc_results, [])
         self.assertEqual(runs, [])
-        self.assertEqual(cachefilenames, [])
         self.assertEqual(environments, [{'name': 'default'}])
 
 
@@ -142,16 +140,15 @@ class TestDatabaseRunResult(TestDatabaseBaseSetup):
         self.assertEqual(run_results[0], self.run_results[0])
 
     def test_get_run_results(self):
-        """ check the correct runs are returned for the specified environments
+        """ check the correct runs are returned
         """
         for run in self.run_results:
             run_id = db.register_run_result(run)
             run['id'] = run_id
 
-        runs = db.get_run_results('default')
+        runs = db.get_run_results()
         self.assertEqual(len(runs), 2)
-        runs = db.get_run_results('does_not_exists')
-        self.assertEqual(len(runs), 0)
+
 
 
 class TestDatabaseProcResult(TestDatabaseBaseSetup):
@@ -195,68 +192,6 @@ class TestDatabaseProcResult(TestDatabaseBaseSetup):
         # check the two procedures were registered for each run
         procs = db.get_proc_results(self.run_results[0]['id'])
         self.assertEqual(procs, self.run_results[0]['proc_results'])
-
-
-class TestDatabaseCachefile(TestDatabaseBaseSetup):
-    def test_register_cached_file(self):
-        # insert runs and procedures
-        for run in self.run_results:
-            run_id = db.register_run_result(run)
-            run['id'] = run_id
-
-            for proc in run['proc_results']:
-                proc['run_result_id'] = run_id
-                proc_id = db.register_proc_result(proc)
-                proc['id'] = proc_id
-
-        # register a file was cached, this should be the first time it's entered
-        id_initial = db.register_cached_file(
-            'fakefile1.txt',
-            'default',
-            self.run_results[0]['proc_results'][0]['id'])
-
-        # update the same file
-        id_update = db.register_cached_file(
-            'fakefile1.txt',
-            'default',
-            self.run_results[0]['proc_results'][0]['id'])
-        self.assertEqual(id_initial, id_update)
-
-        # insert a new file
-        id_new = db.register_cached_file(
-            'fakefile2.txt',
-            'default',
-            self.run_results[0]['proc_results'][0]['id'])
-        self.assertNotEqual(id_new, id_initial)
-
-    def test_get_cache_filenames(self):
-        # insert runs and procedures
-        for run in self.run_results:
-            run_id = db.register_run_result(run)
-            run['id'] = run_id
-
-            for proc in run['proc_results']:
-                proc['run_result_id'] = run_id
-                proc_id = db.register_proc_result(proc)
-                proc['id'] = proc_id
-
-        id1 = db.register_cached_file(
-            'fakefile1.txt',
-            'default',
-            self.run_results[0]['proc_results'][0]['id'])
-
-        id2 = db.register_cached_file(
-            'fakefile2.txt',
-            'default',
-            self.run_results[0]['proc_results'][1]['id'])
-
-        cachedfiles = db.get_cache_filenames('default')
-        # update the same file
-        self.assertEqual(cachedfiles,
-                         [{'id': id1, 'filename': 'fakefile1.txt',
-                           'proc_result_id': self.run_results[0]['proc_results'][0]['id']},
-                          {'id': id2, 'filename': 'fakefile2.txt',
-                           'proc_result_id': self.run_results[0]['proc_results'][1]['id']}])
 
 
 if __name__ == '__main__':
