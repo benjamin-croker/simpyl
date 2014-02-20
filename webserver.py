@@ -31,9 +31,9 @@ def new_environment():
     return json.dumps({'environment_name': request.json['environment_name']}), 201
 
 
-@app.route('/api/runs/<env>')
+@app.route('/api/runs/')
 def get_runs(env):
-    return json.dumps({'run_results': [r for r in db.get_run_results(env)]})
+    return json.dumps({'run_results': [r for r in db.get_run_results()]})
 
 
 @app.route('/api/run/<int:run_id>')
@@ -42,17 +42,16 @@ def get_run(run_id):
 
 
 @app.route('/api/newrun', methods=['POST'])
-@app.route('/api/newrun', methods=['POST'])
 def new_run():
     if not request.json or not all([k in request.json for k in [
-            'description', 'environment_name', 'proc_call_inits']]):
+            'description', 'environment_name', 'proc_inits']]):
         abort(400)
     runm.run(sl, request.json)
 
 
-@app.route('/api/log/<env>/<int:run_id>')
-def get_log(env, run_id):
-    return json.dumps({'log': runm.get_log(env, run_id)})
+@app.route('/api/log/<int:run_id>')
+def get_log(run_id):
+    return json.dumps({'log': runm.get_log(run_id)})
 
 
 def run_server(simpyl_object):

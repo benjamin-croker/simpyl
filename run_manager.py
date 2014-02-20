@@ -14,10 +14,10 @@ def create_dir_if_needed(path):
             raise
 
 
-def get_log(environment_name, run_id):
+def get_log(run_result_id):
     """ gets the log file for a given environment and run
     """
-    with open(os.path.join('envs', environment_name, 'logs', run_id)) as f:
+    with open(os.path.join('runs', run_result_id, 'run_{}.log'.format(run_result_id))) as f:
         return ''.join(f.readlines())
 
 

@@ -6,9 +6,6 @@ import os
 from simpyl import Simpyl
 import database as db
 
-# use the test database
-db.reset_database(os.path.join('tests/test.db'))
-
 sl = Simpyl()
 
 SEED = 12345
@@ -43,7 +40,10 @@ def manual_run():
     # testing on the training set is bad practice, but serves as a demonstration
     score = test_classifier(clf, X, y)
     print("Overall accuracy: {}%".format(100.0*score))
+    return X, y, clf, score
 
 
 if __name__ == '__main__':
+    # use the test database
+    db.reset_database(os.path.join('tests/test.db'))
     sl.start()

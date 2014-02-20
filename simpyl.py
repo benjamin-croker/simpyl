@@ -59,6 +59,7 @@ class Simpyl(object):
 
             self._procedures[procedure_name] = fn
             self._proc_inits += [{'proc_name': procedure_name,
+                                  'run_order': None,
                                   'arguments': arguments}]
             return fn
 
