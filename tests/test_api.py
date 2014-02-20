@@ -51,16 +51,9 @@ class TestEnvCalls(TestAPIBaseSetup):
 
 class TestProcInits(TestAPIBaseSetup):
     def test_get_proc_inits(self):
-        proc_inits = [{'proc_name': 'load', 'run_order': None, 'arguments': []},
-                      {'proc_name': 'train', 'run_order': None, 'arguments': [
-                          {'name': 'X_train', 'value': None},
-                          {'name': 'y_train', 'value': None},
-                          {'name': 'n_estimators', 'value': 10},
-                          {'name': 'min_samples_split', 'value': 2}]},
-                      {'proc_name': 'test', 'run_order': None, 'arguments': [
-                          {'name': 'clf', 'value': None},
-                          {'name': 'X', 'value': None},
-                          {'name': 'y_true', 'value': None}]}]
+        proc_inits = [{'proc_name': 'trainer', 'run_order': None, 'arguments': [
+                          {'name': 'n_estimators', 'value': None},
+                          {'name': 'min_samples_split', 'value': None}]}]
 
         self.assertEqual(json.loads(api_get('/proc_inits')), proc_inits)
 
@@ -68,7 +61,7 @@ class TestProcInits(TestAPIBaseSetup):
 class TestRuns(TestAPIBaseSetup):
     def test_post_run(self):
         # get the results from manually running everything
-        X, y, clf, score = test_sim.manual_run()
+        clf, score = test_sim.main_trainer(n_estimators=10, min_samples_split=2)
 
         # get the proc inits and set the arguments
         proc_inits = json.loads(api_get('/proc_inits'))
@@ -78,21 +71,19 @@ class TestRuns(TestAPIBaseSetup):
             proc_init['run_order'] = i
 
         # set the arguments
-        proc_inits[1]['arguments'] = [{'name': 'X_train', 'value': X},
-                                      {'name': 'y_train', 'value': y},
-                                      {'name': 'n_estimators', 'value': 10},
+        proc_inits[0]['arguments'] = [{'name': 'n_estimators', 'value': 10},
                                       {'name': 'min_samples_split', 'value': 2}]
-
-        proc_inits[2]['arguments'] = [{'name': 'clf', 'value': clf},
-                                      {'name': 'X', 'value': X},
-                                      {'name': 'y_true', 'value': y}]
 
         # create the run and run it
         run_init = {'description': "A test run",
                     'environment_name': 'default',
                     'proc_inits': proc_inits}
 
-        api_post('/newrun', run_init)
+        run_result = json.loads(api_post('/newrun', run_init))
+
+        # check some facts about the run result
+        self.assertGreater(run_result['timestamp_stop'], run_result['timestamp_start'])
+        self.assertEqual(run_result['proc_results'][0]['result'], str((clf, score)))
 
 
 

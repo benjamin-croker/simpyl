@@ -46,7 +46,7 @@ def new_run():
     if not request.json or not all([k in request.json for k in [
             'description', 'environment_name', 'proc_inits']]):
         abort(400)
-    runm.run(sl, request.json)
+    return json.dumps(runm.run(sl, request.json)), 201
 
 
 @app.route('/api/log/<int:run_id>')

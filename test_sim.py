@@ -10,7 +10,6 @@ sl = Simpyl()
 
 SEED = 12345
 
-@sl.add_procedure('load')
 def load_data():
     # load the iris dataset
     iris = datasets.load_iris()
@@ -19,7 +18,6 @@ def load_data():
     return X, y
 
 
-@sl.add_procedure('train')
 def train_classifier(X_train, y_train, n_estimators=10, min_samples_split=2):
     clf = RandomForestClassifier(n_estimators=n_estimators,
                                  min_samples_split=min_samples_split,
@@ -28,19 +26,20 @@ def train_classifier(X_train, y_train, n_estimators=10, min_samples_split=2):
     return clf
 
 
-@sl.add_procedure('test')
 def test_classifier(clf, X, y_true):
     y_pred = clf.predict(X)
     return np.sum(y_pred == y_true) / float(y_pred.size)
 
 
-def manual_run():
+@sl.add_procedure('trainer')
+def main_trainer(n_estimators, min_samples_split):
     X, y = load_data()
-    clf = train_classifier(X, y)
+    clf = train_classifier(X, y, n_estimators, min_samples_split)
+
     # testing on the training set is bad practice, but serves as a demonstration
     score = test_classifier(clf, X, y)
     print("Overall accuracy: {}%".format(100.0*score))
-    return X, y, clf, score
+    return clf, score
 
 
 if __name__ == '__main__':

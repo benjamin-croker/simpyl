@@ -68,7 +68,7 @@ class Simpyl(object):
     def call_procedure(self, procedure_name, kwargs):
         """ call a procedure, all arguments must be passed as kwargs
         """
-        return self._procedures[procedure_name]['fn'](**kwargs)
+        return self._procedures[procedure_name](**kwargs)
 
     def start(self):
         webserver.run_server(self)
