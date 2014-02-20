@@ -1,14 +1,19 @@
 from sklearn import datasets
 from sklearn.ensemble import RandomForestClassifier
 import numpy as np
+import os
 
 from simpyl import Simpyl
+import database as db
+
+# use the test database
+db.reset_database(os.path.join('tests/test.db'))
 
 sl = Simpyl()
 
 SEED = 12345
 
-@sl.add_procedure('load', caches=['X.csv', 'y.csv'])
+@sl.add_procedure('load')
 def load_data():
     # load the iris dataset
     iris = datasets.load_iris()
@@ -17,7 +22,7 @@ def load_data():
     return X, y
 
 
-@sl.add_procedure('train', caches=['classifier.rf'])
+@sl.add_procedure('train')
 def train_classifier(X_train, y_train, n_estimators=10, min_samples_split=2):
     clf = RandomForestClassifier(n_estimators=n_estimators,
                                  min_samples_split=min_samples_split,

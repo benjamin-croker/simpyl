@@ -12,7 +12,6 @@ def api_get(url):
 
 
 def api_post(url, data):
-
     req = urllib2.Request(FLASK_URL.format(url))
     req.add_header('Content-Type', 'application/json')
     return urllib2.urlopen(req, json.dumps(data)).read()
@@ -21,6 +20,7 @@ def api_post(url, data):
 class TestAPIBaseSetup(unittest.TestCase):
     """ resets the database before each call
     """
+
     def setUp(self):
         db.reset_database('test.db')
 
@@ -28,6 +28,7 @@ class TestAPIBaseSetup(unittest.TestCase):
 class TestRunning(TestAPIBaseSetup):
     """ tests that the server is running
     """
+
     def test_running(self):
         self.assertEqual(api_get(''), 'simpyl!')
 
@@ -45,6 +46,22 @@ class TestEnvCalls(TestAPIBaseSetup):
         # list all the environments
         envs = json.loads(api_get('/envs'))
         self.assertEqual(envs, {'environment_names': ['default', 'test_env']})
+
+
+class TestProcInits(TestAPIBaseSetup):
+    def test_get_proc_inits(self):
+        proc_inits = [{'proc_name': 'load', 'arguments': []},
+                      {'proc_name': 'train', 'arguments': [
+                          {'name': 'X_train', 'value': None},
+                          {'name': 'y_train', 'value': None},
+                          {'name': 'n_estimators', 'value': 10},
+                          {'name': 'min_samples_split', 'value': 2}]},
+                      {'proc_name': 'test', 'arguments': [
+                          {'name': 'clf', 'value': None},
+                          {'name': 'X', 'value': None},
+                          {'name': 'y_true', 'value': None}]}]
+
+        self.assertEqual(json.loads(api_get('/proc_inits')), proc_inits)
 
 
 

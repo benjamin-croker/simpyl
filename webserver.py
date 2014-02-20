@@ -15,7 +15,7 @@ def index():
 
 @app.route('/api/proc_inits')
 def get_procedures():
-    return json.dumps(sl.get_proc_inits())
+    return json.dumps(sl._proc_inits)
 
 
 @app.route('/api/envs')
