@@ -32,7 +32,7 @@ def new_environment():
 
 
 @app.route('/api/runs/')
-def get_runs(env):
+def get_runs():
     return json.dumps({'run_results': [r for r in db.get_run_results()]})
 
 
