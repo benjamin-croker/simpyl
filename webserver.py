@@ -18,13 +18,11 @@ def index():
 
 @app.route('/api/proc_inits')
 def get_procedures():
-    return json.dumps(sl._proc_inits)
+    return json.dumps({'proc_inits': sl._proc_inits})
 
 
 @app.route('/api/envs')
 def get_environments():
-    print "hi!"
-    print json.dumps({'environment_names': [e['name'] for e in db.get_environments()]})
     return json.dumps({'environment_names': [e['name'] for e in db.get_environments()]})
 
 

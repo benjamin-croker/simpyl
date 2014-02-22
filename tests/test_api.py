@@ -51,9 +51,10 @@ class TestEnvCalls(TestAPIBaseSetup):
 
 class TestProcInits(TestAPIBaseSetup):
     def test_get_proc_inits(self):
-        proc_inits = [{'proc_name': 'trainer', 'run_order': None, 'arguments': [
-                          {'name': 'n_estimators', 'value': None},
-                          {'name': 'min_samples_split', 'value': None}]}]
+        proc_inits = {'proc_inits': [
+            {'proc_name': 'trainer', 'run_order': None, 'arguments': [
+                {'name': 'n_estimators', 'value': None},
+                {'name': 'min_samples_split', 'value': None}]}]}
 
         self.assertEqual(json.loads(api_get('/proc_inits')), proc_inits)
 
@@ -64,7 +65,7 @@ class TestRuns(TestAPIBaseSetup):
         clf, score = test_sim.main_trainer(n_estimators=10, min_samples_split=2)
 
         # get the proc inits and set the arguments
-        proc_inits = json.loads(api_get('/proc_inits'))
+        proc_inits = json.loads(api_get('/proc_inits'))['proc_inits']
 
         # the proc inits are already in the correct order
         for i, proc_init in enumerate(proc_inits):
