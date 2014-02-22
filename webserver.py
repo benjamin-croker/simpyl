@@ -4,14 +4,17 @@ from flask import Flask, request, abort
 import database as db
 import run_manager as runm
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='site')
 sl = None
 
 
 @app.route('/api')
-def index():
+def api_home():
     return "simpyl!"
 
+@app.route('/')
+def index():
+    return app.send_static_file('index.html')
 
 @app.route('/api/proc_inits')
 def get_procedures():
@@ -20,6 +23,8 @@ def get_procedures():
 
 @app.route('/api/envs')
 def get_environments():
+    print "hi!"
+    print json.dumps({'environment_names': [e['name'] for e in db.get_environments()]})
     return json.dumps({'environment_names': [e['name'] for e in db.get_environments()]})
 
 
