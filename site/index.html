@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en" ng-app="simpylApp">
+<head>
+  <meta charset="utf-8">
+  <title>Google Phone Gallery</title>
+  <!--<link rel="stylesheet" href="css/app.css">-->
+  <!--<link rel="stylesheet" href="css/bootstrap.css">-->
+  <script src="site/assets/js/angular.min.js"></script>
+  <script src="site/assets/js/controllers.js"></script>
+</head>
+<body ng-controller="EnvListCtrl">
+
+  <ul>
+    <li ng-repeat="env in envs">
+      <p>{{env}}</p>
+    </li>
+  </ul>
+
+</body>
+</html>
