@@ -25,11 +25,16 @@
           <h4 class="modal-title" id="myModalLabel">Modal title</h4>
         </div>
         <div class="modal-body">
-          {{ selected_proc_init }}
+          <div>Set arguments for {{ selected_proc_init.proc_name }}</div>
+          <div ng-repeat="arg in selected_proc_init.arguments">
+            <p>{{ arg.name }}</p>
+            <input class="add-input" placeholder="{{arg.value}}" type="text"
+                   ng-model=selected_proc_init.arguments[$index].value />
+          </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-          <button ng-click=addProc() type="button" class="btn btn-primary">Save changes</button>
+          <button ng-click=addProc() type="button" class="btn btn-primary" data-dismiss="modal">Save changes</button>
         </div>
       </div>
     </div>
@@ -53,6 +58,11 @@
     <li ng-repeat="proc_init in avail_proc_inits">
       <pre>{{proc_init}}</pre>
     </li>
+  </ul>
+
+  <h1>Selected proc init</h1>
+  <ul>
+    <pre>{{ selected_proc_init }}</pre>
   </ul>
 
   <h1>Run init template</h1>
