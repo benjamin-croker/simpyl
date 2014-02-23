@@ -20,7 +20,8 @@ simpylApp.controller('EnvListCtrl', function($scope, $http) {
       });
 
   $scope.addProc = function() {
-    $scope.run_init.proc_inits.push($scope.selected_proc_init);
+    // deep copy the proc_init
+    $scope.run_init.proc_inits.push(jQuery.extend(true, {}, $scope.selected_proc_init));
     $scope.selected_proc_init = {};
   };
 });
