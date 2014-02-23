@@ -50,7 +50,7 @@ def reset_database(db_filename=DB_FILENAME):
         timestamp_start REAL,
         timestamp_stop REAL,
         result TEXT,
-        arguments TEXT,
+        arguments_str TEXT,
         run_result_id INTEGER,
         FOREIGN KEY(run_result_id) REFERENCES run_result(id)
     );
@@ -146,7 +146,7 @@ def register_proc_result(db_con, proc_result):
                              proc_result['timestamp_start'],
                              proc_result['timestamp_stop'],
                              str(proc_result['result']),
-                             json.dumps(proc_result['arguments']),
+                             proc_result['arguments_str'],
                              proc_result['run_result_id']])
     return cursor.lastrowid
 
@@ -159,7 +159,7 @@ def get_proc_results(db_con, run_id=None):
         cursor = db_con.execute("SELECT * FROM proc_result")
     else:
         cursor = db_con.execute("SELECT * FROM proc_result WHERE run_result_id = ? ORDER BY run_order", [run_id])
-    return construct_dict(cursor, json_loads=['arguments'])
+    return construct_dict(cursor)
 
 
 @with_db
@@ -183,17 +183,10 @@ def get_environments(db_con):
     return construct_dict(cursor)
 
 
-def construct_dict(cursor, json_loads=None):
+def construct_dict(cursor):
     """ transforms the sqlite cursor rows from table format to a
         list of dictionary objects
-
-        json_loads contains a list of columns which are serialized json
-        strings and should be deserialized
     """
-    if not json_loads: json_loads = []
     rows = cursor.fetchall()
-    return [dict((cursor.description[i][0], json.loads(value))
-                 if cursor.description[i][0] in json_loads
-                 else (cursor.description[i][0], value)
-                 for i, value in enumerate(row))
+    return [dict((cursor.description[i][0], value) for i, value in enumerate(row))
             for row in rows]

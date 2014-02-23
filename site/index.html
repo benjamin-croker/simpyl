@@ -57,15 +57,27 @@
     </li>
   </ul>
 
-  <h1>Selected proc init</h1>
-  <ul>
-    <pre>{{ selected_proc_init }}</pre>
-  </ul>
-
   <h1>Run init template</h1>
   <ul>
     <pre>{{run_init}}</pre>
   </ul>
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Run Order</th>
+        <th>Procedure Name</th>
+        <th>Arguments</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr ng-repeat="p in run_init.proc_inits track by $index">
+        <td>{{p.run_order}}</td>
+        <td>{{p.proc_name}}</td>
+        <td>{{p.arguments_str}}</td>
+      </tr>
+    </tbody>
+  </table>
 
 </body>
 </html>

@@ -1,7 +1,3 @@
-'use strict';
-
-/* Controllers */
-
 var simpylApp = angular.module('simpylApp', []);
 
 simpylApp.controller('EnvListCtrl', function($scope, $http) {
@@ -21,6 +17,11 @@ simpylApp.controller('EnvListCtrl', function($scope, $http) {
       });
 
   $scope.addProc = function() {
+    $scope.selected_proc_init.run_order = $scope.run_init.proc_inits.length;
+    $scope.selected_proc_init.arguments_str = $scope.selected_proc_init.arguments.map(
+      function(item){
+        return item.name+":"+item.value
+      }).join(", ");
     // deep copy the proc_init
     $scope.run_init.proc_inits.push(jQuery.extend(true, {}, $scope.selected_proc_init));
     $scope.selected_proc_init = {};

@@ -36,9 +36,10 @@ class TestDatabaseBaseSetup(unittest.TestCase):
                                   'result': '42',
                                   'run_result_id': None,
                                   'arguments': [
-                                      {'name': 'a', 'value': '2', 'from_cache': False},
-                                      {'name': 'b', 'value': '3', 'from_cache': False}
-                                  ]},
+                                      {'name': 'a', 'value': '2'},
+                                      {'name': 'b', 'value': '3'}
+                                  ],
+                                  'arguments_str': "a:2, b:3"},
                                  {'id': None,
                                   'proc_name': 'bar',
                                   'run_order': 1,
@@ -47,9 +48,10 @@ class TestDatabaseBaseSetup(unittest.TestCase):
                                   'result': '123',
                                   'run_result_id': None,
                                   'arguments': [
-                                      {'name': 'aa', 'value': '20', 'from_cache': False},
-                                      {'name': 'bb', 'value': '30', 'from_cache': False}
-                                  ]}
+                                      {'name': 'aa', 'value': '20'},
+                                      {'name': 'bb', 'value': '30'}
+                                  ],
+                                  'arguments_str': "aa:20, bb:30"}
                              ]},
                             {'id': None,
                              'timestamp_start': 11111,
@@ -66,9 +68,10 @@ class TestDatabaseBaseSetup(unittest.TestCase):
                                   'result': '42',
                                   'run_result_id': None,
                                   'arguments': [
-                                      {'name': 'a', 'value': '2', 'from_cache': False},
-                                      {'name': 'b', 'value': '3', 'from_cache': False}
-                                  ]},
+                                      {'name': 'a', 'value': '2'},
+                                      {'name': 'b', 'value': '3'}
+                                  ],
+                                  'arguments_str': "a:2, b:3"},
                                  {'id': None,
                                   'proc_name': 'bar',
                                   'run_order': 1,
@@ -77,9 +80,10 @@ class TestDatabaseBaseSetup(unittest.TestCase):
                                   'result': '123',
                                   'run_result_id': None,
                                   'arguments': [
-                                      {'name': 'aa', 'value': '20', 'from_cache': False},
-                                      {'name': 'bb', 'value': '30', 'from_cache': False}
-                                  ]}
+                                      {'name': 'aa', 'value': '20'},
+                                      {'name': 'bb', 'value': '30'}
+                                  ],
+                                  'arguments_str': "aa:20, bb:30"}
                              ]}]
 
 
@@ -150,7 +154,6 @@ class TestDatabaseRunResult(TestDatabaseBaseSetup):
         self.assertEqual(len(runs), 2)
 
 
-
 class TestDatabaseProcResult(TestDatabaseBaseSetup):
     def test_register_proc_result(self):
         """ Test a procedure call can be inserted into the database
@@ -191,6 +194,9 @@ class TestDatabaseProcResult(TestDatabaseBaseSetup):
 
         # check the two procedures were registered for each run
         procs = db.get_proc_results(self.run_results[0]['id'])
+        # remove the 'arguments' key as it isn't stored in the database
+        for proc in self.run_results[0]['proc_results']:
+            proc.pop('arguments', None)
         self.assertEqual(procs, self.run_results[0]['proc_results'])
 
 
