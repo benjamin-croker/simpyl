@@ -8,6 +8,7 @@ simpylApp.controller('EnvListCtrl', function($scope, $http) {
   $scope.run_init = {discription: "", environment_name: "", proc_inits: []};
 
   $scope.selected_proc_init = {};
+  $scope.selected_env = "";
 
   $http.get('api/envs').success(
       function(data, status) {

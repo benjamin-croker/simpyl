@@ -41,17 +41,14 @@
   </div>
 
   <!-- Button trigger modal -->
+  <h1>Select Proc Init</h1>
   <select ng-model="selected_proc_init" ng-options="p.proc_name for p in avail_proc_inits"></select>
   <button class="btn btn-primary btn-lg" data-toggle="modal" data-target="#procModal">
     add
   </button>
 
-  <h1>Available Envs</h1>
-  <ul>
-    <li ng-repeat="env in envs">
-      <p>{{env}}</p>
-    </li>
-  </ul>
+  <h1>Select Env</h1>
+  <select ng-model="run_init.environment_name" ng-options="env for env in envs"></select>
 
   <h1>Available procs</h1>
   <ul>
