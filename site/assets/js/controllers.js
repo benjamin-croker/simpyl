@@ -1,4 +1,4 @@
-var simpylApp = angular.module('simpylApp', []);
+var simpylApp = angular.module('simpylApp', ['ui.bootstrap']);
 
 simpylApp.controller('EnvListCtrl', function($scope, $http) {
   $scope.run_init = {discription: "", environment_name: "", proc_inits: []};
