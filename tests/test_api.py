@@ -54,7 +54,8 @@ class TestProcInits(TestAPIBaseSetup):
         proc_inits = {'proc_inits': [
             {'proc_name': 'trainer', 'run_order': None, 'arguments': [
                 {'name': 'n_estimators', 'value': None},
-                {'name': 'min_samples_split', 'value': None}]}]}
+                {'name': 'min_samples_split', 'value': None}],
+             'arguments_str': ''}]}
 
         self.assertEqual(json.loads(api_get('/proc_inits')), proc_inits)
 
@@ -74,6 +75,7 @@ class TestRuns(TestAPIBaseSetup):
         # set the arguments
         proc_inits[0]['arguments'] = [{'name': 'n_estimators', 'value': 10},
                                       {'name': 'min_samples_split', 'value': 2}]
+        proc_inits[0]['arguments_str'] = 'n_estimators:10, min_samples_split:2'
 
         # create the run and run it
         run_init = {'description': "A test run",

@@ -5,6 +5,22 @@ import time
 
 import database as db
 
+LOGFILE_FORMAT = 'run_{}.log'
+DESCRIPTION_FORMAT = 'run_{}_description.txt'
+FIGURE_FORMAT = 'run_{}_{}.png'
+
+
+def run_path(run_result_id):
+    """ gets the pathname for saving files to do with the given run
+    """
+    return os.path.join('runs', run_result_id)
+
+
+def env_path(environment_name):
+    """ gets the pathname for saving files to do with the given environment
+    """
+    return os.path.join('envs', environment_name)
+
 
 def create_dir_if_needed(path):
     try:
@@ -17,7 +33,7 @@ def create_dir_if_needed(path):
 def get_log(run_result_id):
     """ gets the log file for a given environment and run
     """
-    with open(os.path.join('runs', run_result_id, 'run_{}.log'.format(run_result_id))) as f:
+    with open(os.path.join(run_path(run_result_id), LOGFILE_FORMAT.format(run_result_id))) as f:
         return ''.join(f.readlines())
 
 
@@ -26,21 +42,22 @@ def set_environment(sl, environment_name):
         will have no effect if the environment already exists
     """
     # make all the directories for the environment if they don't exist
-    create_dir_if_needed(os.path.join('envs', environment_name))
+    create_dir_if_needed(env_path(environment_name))
 
     # register the environment in the database and set the current env
     db.register_environment(environment_name)
     sl._current_env = environment_name
 
 
-def set_run(run_result_id, description):
+def set_run(sl, run_result_id, description):
     """ set directories for the current run
     """
     # turn the run_result_id into a string, so it can be joined in directory names
     run_result_id = str(run_result_id)
 
     # create the directories for the run
-    create_dir_if_needed(os.path.join('runs', run_result_id))
+    create_dir_if_needed(run_path(run_result_id))
+    sl._current_run = run_result_id
 
 
     # set up logging to log to a file
@@ -51,12 +68,12 @@ def set_run(run_result_id, description):
     logging.basicConfig(level=logging.INFO,
                         format='%(asctime)s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S',
-                        filename=os.path.join('runs',
-                                              run_result_id,
+                        filename=os.path.join(run_path(run_result_id),
                                               'run_{}.log'.format(run_result_id)))
 
     # write a text file with the description as as text file
-    with open(os.path.join('runs', run_result_id, 'description.txt'), 'w') as f:
+    with open(os.path.join(run_path(run_result_id),
+                           DESCRIPTION_FORMAT.format(run_result_id)), 'w') as f:
         f.write(description)
 
 
@@ -76,7 +93,7 @@ def run(sl, run_init):
 
     run_result['id'] = db.register_run_result(run_result)
 
-    set_run(run_result['id'], run_result['description'])
+    set_run(sl, run_result['id'], run_result['description'])
 
     logging.info("[simpyl logged] run #{} started with environment {}".format(
         run_result['id'], run_result['environment_name']))
@@ -91,6 +108,7 @@ def run(sl, run_init):
                        'timestamp_stop': None,
                        'result': None,
                        'arguments': proc_init['arguments'],
+                       'arguments_str': proc_init['arguments_str'],
                        'run_result_id': run_result['id']}
 
         # work out the arguments, loading them from the cache if required

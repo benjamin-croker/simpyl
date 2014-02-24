@@ -3,8 +3,10 @@ import logging
 import os
 import cPickle
 import numpy as np
+import matplotlib.pyplot as plt
 
 import webserver
+import run_manager as runm
 
 
 class Simpyl(object):
@@ -12,6 +14,7 @@ class Simpyl(object):
         self._procedures = {}
         self._proc_inits = []
         self._current_env = 'default'
+        self._current_run = ''
 
         # set up logging
         logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s',
@@ -22,25 +25,34 @@ class Simpyl(object):
         """
         logging.info("[user logged] {}".format(text))
 
+    def savefig(self, title, *args, **kwargs):
+        """ saves a figure to the run folder. *args and **kwargs are passed to the
+            matplotlib.savefig function
+        """
+        plt.savefig(os.path.join(
+            runm.run_path(self._current_run),
+            runm.FIGURE_FORMAT.format(self._current_run, title)),
+                    *args, **kwargs)
+
     def read_cache(self, filename):
-        """ loads a file from the cache
+        """ loads a file from the cache. If the filename ends with .csv,
         """
         if filename[-4:] == '.csv':
-            obj = np.loadtxt(os.path.join('envs', self._current_env, filename), delimiter=',')
+            obj = np.loadtxt(os.path.join(runm.env_path(self._current_env), filename),
+                             delimiter=',')
         else:
-            with open(os.path.join('envs', self._current_env, filename)) as f:
+            with open(os.path.join(runm.env_path(self._current_env), filename)) as f:
                 obj = cPickle.load(f)
         return obj
 
     def write_cache(self, obj, filename):
         """ caches a file with cPickle, unless the filename ends with .csv, then the file will
-            be saved as a .csv file. This will only work if the
+            be saved as a .csv file. This will only work if the object is a numpy array
         """
         if filename[-4:] == '.csv':
-            # check that the object is valid to save as
-            np.savetxt(os.path.join('envs', self._current_env, filename), obj, delimiter=',')
+            np.savetxt(os.path.join(runm.env_path(self._current_env), filename), obj, delimiter=',')
         else:
-            with open(os.path.join('envs', self._current_env, filename), 'wb') as f:
+            with open(os.path.join(runm.env_path(self._current_env), filename), 'wb') as f:
                 cPickle.dump(obj, f)
 
         # update the database to register the cached file
@@ -60,7 +72,8 @@ class Simpyl(object):
             self._procedures[procedure_name] = fn
             self._proc_inits += [{'proc_name': procedure_name,
                                   'run_order': None,
-                                  'arguments': arguments}]
+                                  'arguments': arguments,
+                                  'arguments_str': ''}]
             return fn
 
         return decorator
