@@ -1,9 +1,5 @@
 import inspect
 import logging
-import os
-import cPickle
-import numpy as np
-import matplotlib.pyplot as plt
 
 import webserver
 import run_manager as runm
@@ -13,8 +9,9 @@ class Simpyl(object):
     def __init__(self):
         self._procedures = {}
         self._proc_inits = []
-        self._current_env = 'default'
+        self._current_env = ''
         self._current_run = ''
+        self._current_proc = ''
 
         # set up logging
         logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s',
@@ -23,40 +20,25 @@ class Simpyl(object):
     def log(self, text):
         """ logs some information
         """
-        logging.info("[user logged] {}".format(text))
+        runm.write_log(text)
 
     def savefig(self, title, *args, **kwargs):
         """ saves a figure to the run folder. *args and **kwargs are passed to the
             matplotlib.savefig function
         """
-        plt.savefig(os.path.join(
-            runm.run_path(self._current_run),
-            runm.FIGURE_FORMAT.format(self._current_run, title)),
-                    *args, **kwargs)
+        runm.savefig(title, self._current_proc, self._current_run, *args, **kwargs)
 
     def read_cache(self, filename):
-        """ loads a file from the cache. If the filename ends with .csv,
+        """ loads a file from the cache.
+            calls run_manager.read_cache
         """
-        if filename[-4:] == '.csv':
-            obj = np.loadtxt(os.path.join(runm.env_path(self._current_env), filename),
-                             delimiter=',')
-        else:
-            with open(os.path.join(runm.env_path(self._current_env), filename)) as f:
-                obj = cPickle.load(f)
-        return obj
+        return runm.read_cache(filename, self._current_env)
 
     def write_cache(self, obj, filename):
-        """ caches a file with cPickle, unless the filename ends with .csv, then the file will
-            be saved as a .csv file. This will only work if the object is a numpy array
+        """ caches and object to file.
+            calls run_manager.write_cache
         """
-        if filename[-4:] == '.csv':
-            np.savetxt(os.path.join(runm.env_path(self._current_env), filename), obj, delimiter=',')
-        else:
-            with open(os.path.join(runm.env_path(self._current_env), filename), 'wb') as f:
-                cPickle.dump(obj, f)
-
-        # update the database to register the cached file
-        logging.info("[simpyl logged] {} written to cache".format(filename))
+        return runm.write_cache(obj, filename, self._current_env)
 
     def add_procedure(self, procedure_name):
         def decorator(fn):
@@ -77,11 +59,6 @@ class Simpyl(object):
             return fn
 
         return decorator
-
-    def call_procedure(self, procedure_name, kwargs):
-        """ call a procedure, all arguments must be passed as kwargs
-        """
-        return self._procedures[procedure_name](**kwargs)
 
     def start(self):
         webserver.run_server(self)

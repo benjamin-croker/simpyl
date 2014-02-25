@@ -4,9 +4,11 @@ database.py:
 """
 import os
 import sqlite3
-import json
 
-DB_FILENAME = 'simpyl.db'
+import settings as s
+
+# the default db filename is copied so that it can be changed by reset_database
+DB_FILENAME = s.DEFAULT_DB_FILENAME
 
 
 def with_db(fn):
