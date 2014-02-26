@@ -10,6 +10,7 @@ sl = Simpyl()
 
 SEED = 12345
 
+
 def load_data():
     # load the iris dataset
     iris = datasets.load_iris()
@@ -38,7 +39,7 @@ def main_trainer(n_estimators, min_samples_split):
 
     # testing on the training set is bad practice, but serves as a demonstration
     score = test_classifier(clf, X, y)
-    print("Overall accuracy: {}%".format(100.0*score))
+    print("Overall accuracy: {}%".format(100.0 * score))
     return clf, score
 
 
