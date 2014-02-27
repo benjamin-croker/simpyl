@@ -13,12 +13,11 @@ import settings as s
 def run_logger(run_result_id):
     """ sets up the logger for the Simpyl object to log to an appropriate file
     """
-    logger = logging.Logger('run_handler', level=logging.INFO)
+    logger = logging.Logger('run_handler')
     handler = logging.FileHandler(
         run_path(run_result_id, s.LOGFILE_FORMAT.format(run_result_id)),
         mode='w')
     handler.setFormatter(logging.Formatter('%(asctime)s %(message)s'))
-    logger.setLevel(logging.INFO)
     logger.addHandler(handler)
     return logger
 
@@ -26,10 +25,9 @@ def run_logger(run_result_id):
 def stream_logger():
     """ sets up the logger for the Simpyl object to log to the output
     """
-    logger = logging.Logger('stream_handler', level=logging.INFO)
+    logger = logging.Logger('stream_handler')
     handler = logging.StreamHandler()
     handler.setFormatter(logging.Formatter('%(asctime)s %(message)s'))
-    logger.setLevel(logging.INFO)
     logger.addHandler(handler)
     return logger
 
@@ -194,7 +192,9 @@ def run(sl, run_init):
                       for kw, value in [(arg['name'], arg['value'])
                                         for arg in proc_init['arguments']])
 
-        sl.log("Procedure {} called with arguments {}".format(run_result['id'], kwargs))
+        sl._logger.info(
+            "[simpyl logged] Procedure {} called with arguments {}".format(
+                proc_init['proc_name'], kwargs))
         results = sl._procedures[proc_init['proc_name']](**kwargs)
 
         proc_result['timestamp_stop'] = time.time()

@@ -67,7 +67,7 @@ def api_new_run():
 
 @app.route('/api/log/<int:run_id>')
 def get_log(run_id):
-    return json.dumps({'log': runm.get_log(run_id)})
+    return json.dumps({'log': runm.get_log(str(run_id))})
 
 
 def run_server(simpyl_object):

@@ -135,3 +135,43 @@ class TestRuns(TestAPIBaseSetup):
         for run in runs:
             run_from_api = json.loads(api_get('/run/{}'.format(run['id'])))['run_result']
             self.assertEqual(run_from_api, run)
+
+
+class TestLog(TestRuns):
+    def setUp(self):
+        super(TestLog, self).setUp()
+        self.logs = [
+            ["[simpyl logged] run #1 started with environment default",
+             "[simpyl logged] Procedure trainer called with arguments {u'n_estimators': 10, u'min_samples_split': 2}",
+             "[user logged] Overall accuracy: 98.6666666667%"],
+            ["[simpyl logged] run #2 started with environment default",
+             "[simpyl logged] Procedure trainer called with arguments {u'n_estimators': 1, u'min_samples_split': 20}",
+             "[user logged] Overall accuracy: 95.3333333333%"]
+        ]
+
+    def test_logs(self):
+        """ runs two runs and checks the logs
+        """
+
+        ids = []
+
+        for i in xrange(len(self.arguments)):
+            self.proc_inits[0]['arguments'] = self.arguments[i]
+            self.proc_inits[0]['arguments_str'] = self.arguments_str[i]
+
+            # create the run and run it
+            run_init = {'description': "A test run {}".format(i),
+                        'environment_name': 'default',
+                        'proc_inits': self.proc_inits}
+            ids.append(json.loads(api_post('/newrun', run_init))['id'])
+
+        # get all the logs
+        for i in xrange(len(ids)):
+            log = json.loads(api_get('/log/{}'.format(ids[i])))['log']
+            # split the log on newlines as the api will concatenate it into one string
+            log = log.split('\n')
+            for l in zip(log, self.logs[i]):
+                # assert that the logs strings above are substrings of the actual logs.
+                # the actual logs will have timestamps so we can't do a direct comparison
+                self.assertTrue(l[1] in l[0])
+
