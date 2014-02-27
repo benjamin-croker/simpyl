@@ -120,12 +120,18 @@ class TestRuns(TestAPIBaseSetup):
                         'proc_inits': self.proc_inits}
             api_post('/newrun', run_init)
 
+        # get all the runs
         runs = json.loads(api_get('/runs'))['run_results']
-        print runs
 
+        # check they are what we expect
         self.assertEqual(len(runs), len(self.arguments))
         for i in xrange(len(self.arguments)):
             self.assertEqual(
                 runs[i]['proc_results'][0]['result'],
                 str((self.clfs[i], self.scores[i]))
             )
+
+        # check each run individually
+        for run in runs:
+            run_from_api = json.loads(api_get('/run/{}'.format(run['id'])))['run_result']
+            self.assertEqual(run_from_api, run)

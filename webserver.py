@@ -53,7 +53,7 @@ def api_get_runs():
 
 @app.route('/api/run/<int:run_id>')
 def api_get_run(run_id):
-    return json.dumps({'run_result': db.get_single_run_result(run_id)})
+    return json.dumps({'run_result': db.get_single_run_result(run_id)[0]})
 
 
 @app.route('/api/newrun', methods=['POST'])
