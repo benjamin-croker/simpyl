@@ -121,7 +121,10 @@ def get_run_results(db_con):
     """ gets all runs from the given environment
     """
     cursor = db_con.execute("SELECT * FROM run_result;")
-    return construct_dict(cursor)
+    runs = construct_dict(cursor)
+    for run in runs:
+        run['proc_results'] = get_proc_results(run_id=run['id'])
+    return runs
 
 
 @with_db
@@ -129,7 +132,11 @@ def get_single_run_result(db_con, run_result_id):
     """ gets a specific run
     """
     cursor = db_con.execute("SELECT * FROM run_result WHERE id = ?;", [run_result_id])
-    return construct_dict(cursor)
+    runs = construct_dict(cursor)
+    for run in runs:
+        run['proc_results'] = get_proc_results(run_id=run['id'])
+    return runs
+
 
 
 @with_db

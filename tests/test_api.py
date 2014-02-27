@@ -129,8 +129,3 @@ class TestRuns(TestAPIBaseSetup):
                 runs[i]['proc_results'][0]['result'],
                 str((self.clfs[i], self.scores[i]))
             )
-
-
-
-
-
