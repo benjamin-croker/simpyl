@@ -10,6 +10,30 @@ import database as db
 import settings as s
 
 
+def run_logger(run_result_id):
+    """ sets up the logger for the Simpyl object to log to an appropriate file
+    """
+    logger = logging.Logger('run_handler', level=logging.INFO)
+    handler = logging.FileHandler(
+        run_path(run_result_id, s.LOGFILE_FORMAT.format(run_result_id)),
+        mode='w')
+    handler.setFormatter(logging.Formatter('%(asctime)s %(message)s'))
+    logger.setLevel(logging.INFO)
+    logger.addHandler(handler)
+    return logger
+
+
+def stream_logger():
+    """ sets up the logger for the Simpyl object to log to the output
+    """
+    logger = logging.Logger('stream_handler', level=logging.INFO)
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter('%(asctime)s %(message)s'))
+    logger.setLevel(logging.INFO)
+    logger.addHandler(handler)
+    return logger
+
+
 def run_path(run_result_id, filename=''):
     """ gets the pathname for saving files to do with the given run
         optionally adds a filename to the path
@@ -38,12 +62,6 @@ def savefig(title, proc_name, run_result_id, *args, **kwargs):
     """
     plt.savefig(run_path(run_result_id, s.FIGURE_FORMAT(proc_name, title)),
                 *args, **kwargs)
-
-
-def write_log(text):
-    """ logs some information
-    """
-    logging.info("[user logged] {}".format(text))
 
 
 def get_log(run_result_id):
@@ -104,15 +122,7 @@ def set_run(sl, run_result_id, description):
     sl._current_run = run_result_id
 
     # set up logging to log to a file
-    # remove the old log handlers
-    log = logging.getLogger()  # root logger
-    for hdlr in log.handlers:  # remove all old handlers
-        log.removeHandler(hdlr)
-    logging.basicConfig(level=logging.INFO,
-                        format='%(asctime)s %(message)s',
-                        datefmt='%Y-%m-%d %H:%M:%S',
-                        filename=os.path.join(run_path(run_result_id),
-                                              'run_{}.log'.format(run_result_id)))
+    sl._logger = run_logger(run_result_id)
 
     # write a text file with the description as as text file
     with open(os.path.join(run_path(run_result_id),
@@ -130,6 +140,7 @@ def reset_sl_state(sl):
     sl._current_env = ''
     sl._current_run = ''
     sl._current_proc = ''
+    sl._logger = stream_logger()
 
 
 def to_run_result(run_init):
@@ -168,7 +179,7 @@ def run(sl, run_init):
     run_result['id'] = db.register_run_result(run_result)
     set_run(sl, run_result['id'], run_result['description'])
 
-    logging.info("[simpyl logged] run #{} started with environment {}".format(
+    sl._logger.info("[simpyl logged] run #{} started with environment {}".format(
         run_result['id'], run_result['environment_name']))
 
     # call all the procedures

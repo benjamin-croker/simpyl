@@ -1,5 +1,4 @@
 import inspect
-import logging
 
 import webserver
 import run_manager as runm
@@ -12,15 +11,12 @@ class Simpyl(object):
         self._current_env = ''
         self._current_run = ''
         self._current_proc = ''
-
-        # set up logging
-        logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s',
-                            datefmt='%Y-%m-%d %H:%M:%S')
+        self._logger = runm.stream_logger()
 
     def log(self, text):
         """ logs some information
         """
-        runm.write_log(text)
+        self._logger.info("[user logged] {}".format(text))
 
     def savefig(self, title, *args, **kwargs):
         """ saves a figure to the run folder. *args and **kwargs are passed to the

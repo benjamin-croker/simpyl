@@ -58,8 +58,9 @@ def api_get_run(run_id):
 
 @app.route('/api/newrun', methods=['POST'])
 def api_new_run():
-    if not request.json or not all([k in request.json for k in [
-        'description', 'environment_name', 'proc_inits']]):
+    if not request.json or not all(
+            [k in request.json for k in
+             ['description', 'environment_name', 'proc_inits']]):
         abort(400)
     return json.dumps(runm.run(sl, request.json)), 201
 
@@ -72,4 +73,4 @@ def get_log(run_id):
 def run_server(simpyl_object):
     global sl
     sl = simpyl_object
-    app.run(debug=True)
+    app.run()
