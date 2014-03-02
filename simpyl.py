@@ -53,7 +53,6 @@ class Simpyl(object):
                                   'arguments': arguments,
                                   'arguments_str': ''}]
             return fn
-
         return decorator
 
     def start(self):

@@ -11,3 +11,75 @@
   <script src="site/assets/js/ui-bootstrap-tpls-0.10.0.min.js"></script>
   <script src="site/assets/js/controllers.js"></script>
 </head>
+
+
+
+<body ng-controller="EnvListCtrl">
+
+  <!-- Modals for setting up proc_init arguments -->
+
+  <div class="modal fade" id="procModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+          <h4 class="modal-title" id="myModalLabel">Modal title</h4>
+        </div>
+        <div class="modal-body">
+          <div>Set arguments for {{ selected_proc_init.proc_name }}</div>
+          <div ng-repeat="arg in selected_proc_init.arguments">
+            <p>{{ arg.name }}</p>
+            <input class="add-input" placeholder="{{arg.value}}" type="text"
+                   ng-model=selected_proc_init.arguments[$index].value />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          <button ng-click=addProc() type="button" class="btn btn-primary" data-dismiss="modal">Save changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Button trigger modal -->
+  <h1>Select Proc Init</h1>
+  <select ng-model="selected_proc_init" ng-options="p.proc_name for p in avail_proc_inits"></select>
+  <button class="btn btn-primary btn-lg" data-toggle="modal" data-target="#procModal">
+    add
+  </button>
+
+  <h1>Select Env</h1>
+  <input type="text" ng-model="run_init.environment_name" typeahead="env for env in envs | filter:$viewValue | limitTo:8" class="form-control">
+  <select ng-model="run_init.environment_name" ng-options="env for env in envs"></select>
+
+  <h1>Available procs</h1>
+  <ul>
+    <li ng-repeat="proc_init in avail_proc_inits">
+      <pre>{{proc_init}}</pre>
+    </li>
+  </ul>
+
+  <h1>Run init template</h1>
+  <ul>
+    <pre>{{run_init}}</pre>
+  </ul>
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Run Order</th>
+        <th>Procedure Name</th>
+        <th>Arguments</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr ng-repeat="p in run_init.proc_inits track by $index">
+        <td>{{p.run_order}}</td>
+        <td>{{p.proc_name}}</td>
+        <td>{{p.arguments_str}}</td>
+      </tr>
+    </tbody>
+  </table>
+
+</body>
+</html>
