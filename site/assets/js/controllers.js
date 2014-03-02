@@ -1,14 +1,14 @@
-var simpylApp = angular.module('simpylApp', ['ui.bootstrap']);
+var simpylApp = angular.module('simpylApp', []);
 
 simpylApp.controller('EnvListCtrl', function($scope, $http) {
   $scope.run_init = {discription: "", environment_name: "", proc_inits: []};
 
   $scope.selected_proc_init = {};
-  $scope.selected_env = "";
 
   $http.get('api/envs').success(
       function(data, status) {
           $scope.envs = data.environment_names;
+          $scope.run_init.environment_name = $scope.envs[0]
       });
 
   $http.get('api/proc_inits').success(
@@ -26,4 +26,9 @@ simpylApp.controller('EnvListCtrl', function($scope, $http) {
     $scope.run_init.proc_inits.push(jQuery.extend(true, {}, $scope.selected_proc_init));
     $scope.selected_proc_init = {};
   };
+
+  $scope.addEnv = function () {
+    $scope.envs.push($scope.run_init.environment_name);
+  };
+
 });
