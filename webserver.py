@@ -1,5 +1,5 @@
 import json
-from flask import Flask, request, abort
+from flask import Flask, request, abort, redirect
 
 import database as db
 import run_manager as runm
@@ -73,4 +73,4 @@ def get_log(run_id):
 def run_server(simpyl_object):
     global sl
     sl = simpyl_object
-    app.run()
+    app.run(debug=True)
