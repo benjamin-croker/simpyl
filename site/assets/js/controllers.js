@@ -1,6 +1,6 @@
 var simpylApp = angular.module('simpylApp', []);
 
-simpylApp.controller('NewRunCtrl', function($scope, $http, $location) {
+simpylApp.controller('NewRunCtrl', function($scope, $http, $window) {
   $scope.run_init = {description: "", environment_name: "", proc_inits: []};
 
   $scope.selected_proc_init = {};
@@ -34,7 +34,11 @@ simpylApp.controller('NewRunCtrl', function($scope, $http, $location) {
   $scope.postRun = function () {
     $http.post('api/newrun', $scope.run_init).success(
       function(data, status) {
-        $location.set('/runs');
+        console.log($window)
+        $window.location.href = '/runs';
+        // console.log($location.path());
+        // console.log($location.absUrl());
+        // $location.url('/runs');
       }
     )
   }

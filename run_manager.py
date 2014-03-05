@@ -10,6 +10,19 @@ import database as db
 import settings as s
 
 
+def to_number(string):
+    """ takes a string and will try to convert it to an integer first,
+        then a float if that fails. If neither of these work, return
+        the string
+    """
+    try:
+        return int(string)
+    except ValueError:
+        try:
+            return float(string)
+        except ValueError:
+            return string
+
 def run_logger(run_result_id):
     """ sets up the logger for the Simpyl object to log to an appropriate file
     """
@@ -187,8 +200,8 @@ def run(sl, run_init):
         proc_result['run_result_id'] = run_result['id']
         set_proc(sl, proc_init['proc_name'])
 
-        # work out the arguments, loading them from the cache if required
-        kwargs = dict((kw, value)
+        # work out the arguments, converting stings to numbers if applicable
+        kwargs = dict((kw, to_number(value))
                       for kw, value in [(arg['name'], arg['value'])
                                         for arg in proc_init['arguments']])
 
