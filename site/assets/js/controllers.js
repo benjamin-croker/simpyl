@@ -36,9 +36,6 @@ simpylApp.controller('NewRunCtrl', function($scope, $http, $window) {
       function(data, status) {
         console.log($window)
         $window.location.href = '/runs';
-        // console.log($location.path());
-        // console.log($location.absUrl());
-        // $location.url('/runs');
       }
     )
   }
@@ -46,8 +43,23 @@ simpylApp.controller('NewRunCtrl', function($scope, $http, $window) {
 });
 
 simpylApp.controller('RunsCtrl', function($scope, $http) {
+  // function to create a string for all proc results
+  $scope.resultsString = function(result) {
+    return result.proc_results.map(
+      function(proc_result) {
+        return proc_result.proc_name + ":\n" + proc_result.result;
+      }).join("\r\n");
+  }
+
   $http.get('api/runs').success(
     function(data, status) {
       $scope.run_results = data.run_results;
+      $scope.run_results.map(
+        function(result) {
+          result.result = $scope.resultsString(result);
+        });
   });
+
+  console.log($scope)
+
 });
