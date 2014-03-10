@@ -27,6 +27,10 @@ def new_run():
 def runs():
     return app.send_static_file('runs.html')
 
+@app.route('/rundetail')
+def run_detail():
+    return app.send_static_file('run_detail.html')
+
 
 @app.route('/api/proc_inits')
 def api_proc_inits():

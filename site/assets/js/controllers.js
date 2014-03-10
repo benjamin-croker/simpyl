@@ -1,6 +1,6 @@
-var simpylApp = angular.module('simpylApp', []);
+var simpylControllers = angular.module('simpylControllers', [])
 
-simpylApp.controller('NewRunCtrl', function($scope, $http, $window) {
+simpylControllers.controller('NewRunCtrl', function($scope, $http, $window) {
   $scope.run_init = {description: "", environment_name: "", proc_inits: []};
 
   $scope.selected_proc_init = {};
@@ -34,7 +34,6 @@ simpylApp.controller('NewRunCtrl', function($scope, $http, $window) {
   $scope.postRun = function () {
     $http.post('api/newrun', $scope.run_init).success(
       function(data, status) {
-        console.log($window)
         $window.location.href = '/runs';
       }
     )
@@ -42,7 +41,7 @@ simpylApp.controller('NewRunCtrl', function($scope, $http, $window) {
 
 });
 
-simpylApp.controller('RunsCtrl', function($scope, $http) {
+simpylControllers.controller('RunsCtrl', function($scope, $http) {
   // function to create a string for all proc results
   $scope.resultsString = function(result) {
     return result.proc_results.map(
@@ -59,7 +58,12 @@ simpylApp.controller('RunsCtrl', function($scope, $http) {
           result.result = $scope.resultsString(result);
         });
   });
+});
 
-  console.log($scope)
 
+simpylControllers.controller('RunDetailCtrl', function($scope, $http, $location) {
+  $http.get('api/run/'+($location.search()).runid).success(
+    function(data, status) {
+      $scope.run_result = data.run_result;
+    });
 });

@@ -10,6 +10,8 @@
   <script src="site/assets/js/jquery-1.11.0.min.js"></script>
   <script src="site/assets/js/bootstrap.min.js"></script>
   <script src="site/assets/js/angular.min.js"></script>
+  <script src="site/assets/js/angular-route.min.js"></script>
+  <script src="site/assets/js/app.js"></script>
   <script src="site/assets/js/controllers.js"></script>
 </head>
 
@@ -40,7 +42,7 @@
           </thead>
           <tbody>
             <tr ng-repeat="r in run_results track by $index">
-              <td>{{r.id}}</td>
+              <td><a href="/rundetail#?runid={{r.id}}">{{r.id}}</a></td>
               <td>{{r.description}}</td>
               <td>{{r.result}}</td>
             </tr>
