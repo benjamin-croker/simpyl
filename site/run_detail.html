@@ -15,11 +15,58 @@
 </head>
 
 <body ng-controller="RunDetailCtrl">
+  <div class="container">
+    <div class="header">
+      <h3 class="text-muted pull-right">simpyl!</h3>
+      <ul class="nav nav-pills">
+        <li><a href="/">Home</a></li>
+        <li><a href="/runs">View Runs</a></li>
+        <li><a href="/newrun">New Run</a></li>
+        <li class="active"><a href="#">Run #{{run_result.id}} Detail</a></li>
+      </ul>
+    </div>
 
-  <!-- Modals for setting up proc_init arguments -->
+    <div class="row">
+      <div class="col-lg-12">
+        <h2>Description</h2>
+        {{run_result.description}}
 
+        <h2>Procedures Called</h2>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Run Order</th>
+              <th>Procedure Name</th>
+              <th>Start Time</th>
+              <th>Stop Time</th>
+              <th>Arguments</th>
+              <th>Results</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr ng-repeat="p in run_result.proc_results track by $index">
+              <td>{{p.run_order}}</td>
+              <td>{{p.timestamp_start}}</td>
+              <td>{{p.proc_name}}</td>
+              <td>{{p.timestamp_stop}}</td>
+              <td><pre>{{p.arguments_str}}</pre></td>
+              <td><pre>{{p.result}}</pre></td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <h2>Log</h2>
+        <pre ng-bind="log"></pre>
 
-  {{run_result}}
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-lg-9 col-lg-offset-3">
+      </div>
+    </div>
+
+  </div> <!-- /container -->
 
 </body>
 </html>

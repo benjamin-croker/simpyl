@@ -47,7 +47,7 @@ simpylControllers.controller('RunsCtrl', function($scope, $http) {
     return result.proc_results.map(
       function(proc_result) {
         return proc_result.proc_name + ":\n" + proc_result.result;
-      }).join("\r\n");
+      }).join("\n");
   }
 
   // function to format the timestamps in a readable way
@@ -70,8 +70,24 @@ simpylControllers.controller('RunsCtrl', function($scope, $http) {
 
 
 simpylControllers.controller('RunDetailCtrl', function($scope, $http, $location) {
+  // function to format the timestamps in a readable way
+  $scope.timestampString = function(timestamp) {
+    var d = new Date(1000*timestamp);
+    return d.toLocaleString()
+  }
+
   $http.get('api/run/'+($location.search()).runid).success(
     function(data, status) {
       $scope.run_result = data.run_result;
+      $scope.run_result.proc_results.map(
+        function(proc_result) {
+          proc_result.timestamp_start = $scope.timestampString(proc_result.timestamp_start);
+          proc_result.timestamp_stop = $scope.timestampString(proc_result.timestamp_stop);
+        });
+    });
+
+  $http.get('api/log/'+($location.search()).runid).success(
+    function(data, status) {
+      $scope.log = data.log;
     });
 });

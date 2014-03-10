@@ -60,9 +60,7 @@
 
   <div class="container">
     <div class="header">
-      <h3 class="text-muted pull-right">
-        <button ng-click=postRun() class="btn btn-success pull-right">Start Run</button>
-      </h3>
+      <h3 class="text-muted pull-right">simpyl!</h3>
       <ul class="nav nav-pills">
         <li><a href="/">Home</a></li>
         <li><a href="/runs">View Runs</a></li>
@@ -79,6 +77,9 @@
         <h2>Environment</h2>
         <select ng-model="run_init.environment_name" ng-options="env for env in envs"></select>
         <button class="btn btn-primary" data-toggle="modal" data-target="#envModal">new</button>
+
+        <h2></h2>
+        <button ng-click=postRun() class="btn btn-success">Start Run</button>
       </div>
 
       <div class="col-lg-9">
@@ -88,7 +89,7 @@
 
     <div class="row">
       <div class="col-lg-9 col-lg-offset-3">
-        <table class="table">
+        <table class="table table-condensed">
           <thead>
             <tr>
               <th>Run Order</th>
