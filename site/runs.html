@@ -32,17 +32,21 @@
     <div class="row">
       <div class="col-lg-12">
         <h2>Previous Runs</h2>
-        <table class="table">
+        <table class="table table-condensed table-striped">
           <thead>
             <tr>
               <th>Run ID</th>
+              <th>Start Time</th>
+              <th>Stop Time</th>
               <th>Description</th>
               <th>Results</th>
             </tr>
           </thead>
           <tbody>
             <tr ng-repeat="r in run_results track by $index">
-              <td><a href="/rundetail#?runid={{r.id}}">{{r.id}}</a></td>
+              <td><a href="/rundetail#?runid={{r.id}}">Run #{{r.id}}</a></td>
+              <td>{{r.timestamp_start}}</td>
+              <td>{{r.timestamp_stop}}</td>
               <td>{{r.description}}</td>
               <td>{{r.result}}</td>
             </tr>

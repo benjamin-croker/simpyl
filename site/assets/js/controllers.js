@@ -50,12 +50,20 @@ simpylControllers.controller('RunsCtrl', function($scope, $http) {
       }).join("\r\n");
   }
 
+  // function to format the timestamps in a readable way
+  $scope.timestampString = function(timestamp) {
+    var d = new Date(1000*timestamp);
+    return d.toLocaleString()
+  }
+
   $http.get('api/runs').success(
     function(data, status) {
       $scope.run_results = data.run_results;
       $scope.run_results.map(
         function(result) {
           result.result = $scope.resultsString(result);
+          result.timestamp_start = $scope.timestampString(result.timestamp_start);
+          result.timestamp_stop = $scope.timestampString(result.timestamp_stop);
         });
   });
 });
