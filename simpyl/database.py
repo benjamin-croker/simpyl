@@ -73,7 +73,7 @@ def reset_database(db_filename=DB_FILENAME):
     for _create_table_sql in _create_tables_sql:
         db_con.execute(_create_table_sql)
         # create the default environment
-    db_con.execute("INSERT INTO environment VALUES (?);", ['default'])
+    db_con.execute("INSERT INTO environment VALUES (?);", [s.DEFAULT_ENV_NAME])
     db_con.commit()
     db_con.close()
 
@@ -199,3 +199,13 @@ def construct_dict(cursor):
     rows = cursor.fetchall()
     return [dict((cursor.description[i][0], value) for i, value in enumerate(row))
             for row in rows]
+
+
+def create_db_if_required(db_filename=DB_FILENAME):
+    """ Creates the SQLite file if it doesn't exist
+    """
+    if not os.path.isfile(db_filename):
+        reset_database(db_filename)
+
+# create the database if it doesn't exist
+create_db_if_required()
