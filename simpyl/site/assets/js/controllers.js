@@ -76,6 +76,7 @@ simpylControllers.controller('RunDetailCtrl', function($scope, $http, $location)
     return d.toLocaleString()
   }
 
+  // get information about the run
   $http.get('api/run/'+($location.search()).runid).success(
     function(data, status) {
       $scope.run_result = data.run_result;
@@ -86,8 +87,16 @@ simpylControllers.controller('RunDetailCtrl', function($scope, $http, $location)
         });
     });
 
+  // get the log text
   $http.get('api/log/'+($location.search()).runid).success(
     function(data, status) {
       $scope.log = data.log;
     });
+
+  // get the list of figures
+  $http.get('api/figures/'+($location.search()).runid).success(
+    function(data, status) {
+      $scope.figure_list = data.figures;
+    });
+
 });

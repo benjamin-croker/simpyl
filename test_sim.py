@@ -44,6 +44,7 @@ def main_trainer(n_estimators, min_samples_split):
     sl.write_cache(clf, "classifier.rf")
     return score
 
+
 @sl.add_procedure('plots')
 def feature_importance():
     clf = sl.read_cache("classifier.rf")

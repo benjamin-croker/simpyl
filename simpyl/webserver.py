@@ -1,5 +1,6 @@
+from flask import Flask, request, abort, send_file, url_for
 import json
-from flask import Flask, request, abort, redirect
+import StringIO
 
 import database as db
 import run_manager as runm
@@ -72,6 +73,26 @@ def api_new_run():
 @app.route('/api/log/<int:run_id>')
 def get_log(run_id):
     return json.dumps({'log': runm.get_log(str(run_id))})
+
+
+@app.route('/api/figures/<int:run_id>')
+def api_get_figures(run_id):
+    figure_urls = [url_for('api_get_figure',
+                           run_id=run_id,
+                           figure_name=fname,
+                           _external=True)
+                   for fname in runm.get_figures(run_id)]
+    return json.dumps({'figures': figure_urls})
+
+
+@app.route('/api/figure/<int:run_id>/<string:figure_name>')
+def api_get_figure(run_id, figure_name):
+    img = runm.get_figure(run_id, figure_name)
+    strIO = StringIO.StringIO()
+    strIO.write(img.read())
+    strIO.seek(0)
+    img.close()
+    return send_file(strIO)
 
 
 def run_server(simpyl_object):

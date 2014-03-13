@@ -5,6 +5,7 @@ import time
 import cPickle
 import numpy as np
 import matplotlib.pyplot as plt
+import glob
 
 import database as db
 import settings as s
@@ -49,7 +50,7 @@ def run_path(run_result_id, filename=''):
     """ gets the pathname for saving files to do with the given run
         optionally adds a filename to the path
     """
-    return os.path.join('runs', run_result_id, filename)
+    return os.path.join('runs', str(run_result_id), filename)
 
 
 def env_path(environment_name, filename=''):
@@ -76,10 +77,23 @@ def savefig(title, proc_name, run_result_id, *args, **kwargs):
 
 
 def get_log(run_result_id):
-    """ gets the log file for a given environment and run
+    """ gets the log file for a given run
     """
     with open(run_path(run_result_id, s.LOGFILE_FORMAT.format(run_result_id))) as f:
         return ''.join(f.readlines())
+
+
+def get_figures(run_result_id):
+    """ gets a list of figures for a given run
+    """
+    return [os.path.basename(fname) for fname in
+            glob.glob(run_path(run_result_id, s.FIGURE_FORMAT.format("*", "*")))]
+
+
+def get_figure(run_result_id, figure_name):
+    """ gets the filename for the figure
+    """
+    return open(run_path(run_result_id, figure_name))
 
 
 def read_cache(filename, environment_name):

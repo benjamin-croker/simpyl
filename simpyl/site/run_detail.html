@@ -58,6 +58,10 @@
         <h2>Log</h2>
         <pre ng-bind="log"></pre>
 
+        <h2>Figures</h2>
+        <div ng-repeat="fig in figure_list track by $index">
+          <img ng-src={{fig}}></img>
+        </div>
       </div>
     </div>
 
