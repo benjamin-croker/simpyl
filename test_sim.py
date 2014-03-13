@@ -1,10 +1,11 @@
 from sklearn import datasets
 from sklearn.ensemble import RandomForestClassifier
 import numpy as np
+import matplotlib.pyplot as plt
 import os
 
 from simpyl import Simpyl
-import database as db
+import simpyl.database as db
 
 sl = Simpyl()
 
@@ -40,10 +41,22 @@ def main_trainer(n_estimators, min_samples_split):
     # testing on the training set is bad practice, but serves as a demonstration
     score = test_classifier(clf, X, y)
     sl.log("Overall accuracy: {}%".format(100.0 * score))
-    return clf, score
+    sl.write_cache(clf, "classifier.rf")
+    return score
+
+@sl.add_procedure('plots')
+def feature_importance():
+    clf = sl.read_cache("classifier.rf")
+    # plot the classification probabilities for the first example
+    n_features = clf.feature_importances_.shape[0]
+    plt.bar(np.arange(n_features), clf.feature_importances_)
+    # 0.4 is half the default width
+    plt.xticks(np.arange(n_features)+0.4, ["Feature {}".format(i+1) for i in xrange(n_features)])
+    sl.savefig("Feature Importances")
+    return(clf)
 
 
 if __name__ == '__main__':
     # use the test database
-    db.reset_database(os.path.join('tests/test.db'))
+    db.reset_database(os.path.join('simpyl', 'tests', 'test.db'))
     sl.start()

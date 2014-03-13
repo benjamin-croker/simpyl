@@ -71,7 +71,7 @@ def savefig(title, proc_name, run_result_id, *args, **kwargs):
     """ saves a figure to the run folder. *args and **kwargs are passed to the
         matplotlib.savefig function
     """
-    plt.savefig(run_path(run_result_id, s.FIGURE_FORMAT(proc_name, title)),
+    plt.savefig(run_path(run_result_id, s.FIGURE_FORMAT.format(proc_name, title)),
                 *args, **kwargs)
 
 
