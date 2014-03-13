@@ -92,7 +92,7 @@ def api_get_figure(run_id, figure_name):
     with open(os.path.join(app.root_path, 'temp.image'), 'wb') as tmp:
         tmp.write(img.read())
     img.close()
-    return send_file('temp.image', mimetype=mimetypes.guess_type(figure_name))
+    return send_file('temp.image', mimetype=mimetypes.guess_type(figure_name)[0])
 
 
 def run_server(simpyl_object):
