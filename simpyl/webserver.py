@@ -1,6 +1,7 @@
 from flask import Flask, request, abort, send_file, url_for
 import json
-import StringIO
+import os
+import mimetypes
 
 import database as db
 import run_manager as runm
@@ -88,11 +89,10 @@ def api_get_figures(run_id):
 @app.route('/api/figure/<int:run_id>/<string:figure_name>')
 def api_get_figure(run_id, figure_name):
     img = runm.get_figure(run_id, figure_name)
-    strIO = StringIO.StringIO()
-    strIO.write(img.read())
-    strIO.seek(0)
+    with open(os.path.join(app.root_path, 'temp.image'), 'wb') as tmp:
+        tmp.write(img.read())
     img.close()
-    return send_file(strIO)
+    return send_file('temp.image', mimetype=mimetypes.guess_type(figure_name))
 
 
 def run_server(simpyl_object):
