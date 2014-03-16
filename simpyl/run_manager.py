@@ -168,6 +168,12 @@ def reset_sl_state(sl):
     sl._logger = stream_logger()
 
 
+def get_arguments_str(arguments):
+    """ takes the arguments dictionary of a proc_init and turns it into a nicely formatted string
+    """
+    return ", ".join(["{}:{}".format(k, arguments[k]) for k in arguments])
+
+
 def to_run_result(run_init):
     """ creates a run_result template from a run_init
     """
@@ -194,9 +200,15 @@ def to_proc_result(proc_init):
             'run_result_id': None}
 
 
-def run(sl, run_init):
+def run(sl, run_init, convert_args_to_numbers=True):
     """ set or create the current environment
+
+        if to_number is True, string arguments will be converted to numbers
+        if they can with to_number()
     """
+    # use the default environment if none is given
+    if run_init['environment_name'] is None:
+        run_init['environment_name'] = s.DEFAULT_ENV_NAME
     set_environment(sl, run_init['environment_name'])
 
     # register run in database and create a run result
@@ -215,9 +227,14 @@ def run(sl, run_init):
         set_proc(sl, proc_init['proc_name'])
 
         # work out the arguments, converting stings to numbers if applicable
-        kwargs = dict((kw, to_number(value))
-                      for kw, value in [(arg['name'], arg['value'])
-                                        for arg in proc_init['arguments']])
+        if convert_args_to_numbers:
+            kwargs = dict((kw, to_number(value))
+                          for kw, value in [(arg['name'], arg['value'])
+                                            for arg in proc_init['arguments']])
+        else:
+            kwargs = dict((kw, value)
+                          for kw, value in [(arg['name'], arg['value'])
+                                            for arg in proc_init['arguments']])
 
         sl._logger.info(
             "[simpyl logged] Procedure {} called with arguments {}".format(

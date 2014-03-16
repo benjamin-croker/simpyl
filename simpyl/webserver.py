@@ -68,7 +68,7 @@ def api_new_run():
             [k in request.json for k in
              ['description', 'environment_name', 'proc_inits']]):
         abort(400)
-    return json.dumps(runm.run(sl, request.json)), 201
+    return json.dumps(runm.run(sl, request.json, convert_args_to_numbers=True)), 201
 
 
 @app.route('/api/log/<int:run_id>')
