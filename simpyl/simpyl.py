@@ -82,8 +82,8 @@ class Simpyl(object):
                 'by_proc': Each proc in the list is called multiple times, and the list is executed once.
                     All arguments for a single procedures must be iterable with with same length.
                     With each iteration i, the ith element of the argument value is passed into the procedure.
-                    Use this option when procedures are largely independent and you want to execute several
-                    with different arguments
+                    Use this option when procedures are largely independent and you want to execute the same
+                    procedures several times with different arguments
                     e.g.
                         Simpyl.run([('foo', {'foo_arg': [1,2,3]}),
                                 ('bar', {'bar_arg':[3,4]}), description='', expand_args='by_proc')
@@ -112,6 +112,16 @@ class Simpyl(object):
                 Ignored if expand_args is anything else.
         """
 
+        def _convert_to_proc_inits(procs):
+            """ takes a list of (proc_name, arguments) tuples and converts them to a list
+                of proc_inits
+            """
+            return [{'proc_name': p[0],
+                     'run_order': i,
+                     'arguments': p[1],
+                     'arguments_str': runm.get_arguments_str(p[1])}
+                    for i, p in enumerate(procs)]
+
         # check the args are valid
         if expand_args not in (None, 'by_proc', 'by_run'):
             raise ValueError("expand_args must by None, 'by_proc' or 'by_run'")
@@ -119,13 +129,28 @@ class Simpyl(object):
         # if there's no expansion, just pass the procs to a new run
         if expand_args is None:
             # turn the procs into proc_init dictionaries
-            proc_inits = [{'proc_name': p[0],
-                           'run_order': i,
-                           'arguments': p[1],
-                           'arguments_str': runm.get_arguments_str(p[1])}
-                          for i, p in enumerate(procs)]
+            proc_inits = _convert_to_proc_inits(procs)
             run_init = {'description': description, 'environment': environment, 'proc_inits': proc_inits}
             runm.run(self, run_init, convert_args_to_numbers=False)
+
+        # if expanding by proc, get a list repeating all the procedures
+        proc_inits = []
+        if expand_args == 'by_proc':
+            for proc in procs:
+                # check that all arguments is the same length
+                # first get all the lengths, proc[1] is the args dict
+                lens = [len(proc[1][k]) for k in proc[1]]
+                # check the first element is the same as all elements
+                if not lens.count(lens[0]) == len(lens):
+                    raise ValueError("all arguments for a particular procedure must be the same length")
+
+                # expand all the arguments in the procs
+                expanded_proc = [(proc[0], map(lambda x: {x[0]: x[1][i]}, proc[1].iteritems())) for i in xrange(lens[0])]
+                proc_inits += _convert_to_proc_inits(expanded_proc)
+
+            run_init = {'description': description, 'environment': environment, 'proc_inits': proc_inits}
+            runm.run(self, run_init, convert_args_to_numbers=False)
+
 
 
     def start(self):
