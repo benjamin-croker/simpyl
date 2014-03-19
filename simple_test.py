@@ -21,8 +21,7 @@ if __name__ == '__main__':
     db.reset_database(os.path.join('simpyl', 'tests', 'test.db'))
     sl.run([('foo', {'a': [1, 2, 3], 'b': [4, 5, 6]}),
             ('bar', {'a': 10, 'b': 20})],
-           description="No expansion",
-           expand_args='by_proc')
+           description="No expansion")
     sl.run([('foo', {'a': [1, 2, 3], 'b': [4, 5, 6]}),
             ('bar', {'a': [1, 2], 'b': [4, 5]})],
            description="By proc expansion",

@@ -119,7 +119,7 @@ class Simpyl(object):
         if expand_args is None:
             # turn the procs into proc_init dictionaries
             proc_inits = _convert_to_proc_inits(procs)
-            run_init = {'description': description, 'environment': environment, 'proc_inits': proc_inits}
+            run_init = {'description': description, 'environment_name': environment, 'proc_inits': proc_inits}
             runm.run(self, run_init, convert_args_to_numbers=False)
 
         # if expanding by proc, get a list repeating all the procedures
@@ -134,10 +134,10 @@ class Simpyl(object):
 
             # expand all the arguments in the procs then flatten the list
             # the expansion of each proc generates its own list
-            proc_inits = [_convert_to_proc_inits(_expand_proc(proc)) for proc in procs]
+            proc_inits = [_convert_to_proc_inits(_expand_proc(proc, lens[0])) for proc in procs]
             proc_inits = [proc for proc_expanded in proc_inits for proc in proc_expanded]
 
-            run_init = {'description': description, 'environment': environment, 'proc_inits': proc_inits}
+            run_init = {'description': description, 'environment_name': environment, 'proc_inits': proc_inits}
             runm.run(self, run_init, convert_args_to_numbers=False)
 
         if expand_args == 'by_run':
@@ -149,7 +149,7 @@ class Simpyl(object):
                 raise ValueError("all arguments for a particular procedure must be the same length")
 
             # expand all the procs individually
-            proc_inits = [_convert_to_proc_inits(_expand_proc(proc)) for proc in procs]
+            proc_inits = [_convert_to_proc_inits(_expand_proc(proc, lens[0])) for proc in procs]
             # zip over the list to get one proc for each run
             proc_inits = zip(*proc_inits)
 
@@ -158,14 +158,13 @@ class Simpyl(object):
             if separate_runs:
                 for thisrun_proc_inits in proc_inits:
                     run_init = {'description': description,
-                                'environment': environment,
-                                'proc_inits': proc_inits}
+                                'environment_name': environment,
+                                'proc_inits': thisrun_proc_inits}
                     runm.run(self, run_init, convert_args_to_numbers=False)
             else:
                 proc_inits = [proc for proc_expanded in proc_inits for proc in proc_expanded]
-                run_init = {'description': description, 'environment': environment, 'proc_inits': proc_inits}
+                run_init = {'description': description, 'environment_name': environment, 'proc_inits': proc_inits}
                 runm.run(self, run_init, convert_args_to_numbers=False)
-
 
     def start(self):
         webserver.run_server(self)
@@ -182,10 +181,10 @@ def _convert_to_proc_inits(procs):
             for i, p in enumerate(procs)]
 
 
-def _expand_proc(proc):
+def _expand_proc(proc, lens):
     """ takes a (proc_name, arguments) tuple and expends it into a list
         of procs, with the i_th proc having the i_th element of each
         argument in the arguments dict
     """
     return [(proc[0], map(lambda x: {x[0]: x[1][i]}, proc[1].iteritems()))
-            for i in xrange(lens[0])]
+            for i in xrange(lens)]
