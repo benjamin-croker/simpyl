@@ -134,7 +134,7 @@ class Simpyl(object):
 
             # expand all the arguments in the procs then flatten the list
             # the expansion of each proc generates its own list
-            proc_inits = [_convert_to_proc_inits(_expand_proc(proc, lens[0])) for proc in procs]
+            proc_inits = [_convert_to_proc_inits(_expand_proc(proc)) for proc in procs]
             proc_inits = [proc for proc_expanded in proc_inits for proc in proc_expanded]
 
             run_init = {'description': description, 'environment_name': environment, 'proc_inits': proc_inits}
@@ -149,7 +149,7 @@ class Simpyl(object):
                 raise ValueError("all arguments for a particular procedure must be the same length")
 
             # expand all the procs individually
-            proc_inits = [_convert_to_proc_inits(_expand_proc(proc, lens[0])) for proc in procs]
+            proc_inits = [_convert_to_proc_inits(_expand_proc(proc)) for proc in procs]
             # zip over the list to get one proc for each run
             proc_inits = zip(*proc_inits)
 
@@ -176,15 +176,18 @@ def _convert_to_proc_inits(procs):
     """
     return [{'proc_name': p[0],
              'run_order': i,
-             'arguments': p[1],
+             'arguments': [{'name': k, 'value': p[1][k]} for k in p[1]],
              'arguments_str': runm.get_arguments_str(p[1])}
             for i, p in enumerate(procs)]
 
 
-def _expand_proc(proc, lens):
+def _expand_proc(proc):
     """ takes a (proc_name, arguments) tuple and expends it into a list
         of procs, with the i_th proc having the i_th element of each
         argument in the arguments dict
     """
-    return [(proc[0], map(lambda x: {x[0]: x[1][i]}, proc[1].iteritems()))
+    # get the number of arguments to expand over, by taking the length of the first argument
+    # this assumes that all arguments are iterables with the same length
+    lens = len(proc[1].values()[0])
+    return [(proc[0], dict(map(lambda (k, v): (k, v[i]), proc[1].iteritems())))
             for i in xrange(lens)]

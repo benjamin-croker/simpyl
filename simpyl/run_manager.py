@@ -24,6 +24,7 @@ def to_number(string):
         except ValueError:
             return string
 
+
 def run_logger(run_result_id):
     """ sets up the logger for the Simpyl object to log to an appropriate file
     """
@@ -191,7 +192,7 @@ def to_proc_result(proc_init):
     """
     return {'id': None,
             'proc_name': proc_init['proc_name'],
-            'run_order': proc_init['run_order'],
+            'run_order': None,
             'timestamp_start': time.time(),
             'timestamp_stop': None,
             'result': None,
@@ -223,6 +224,9 @@ def run(sl, run_init, convert_args_to_numbers=True):
     for run_order, proc_init in enumerate(run_init['proc_inits']):
         # run the procedure
         proc_result = to_proc_result(proc_init)
+        # set the run order
+        proc_result['run_order'] = run_order
+
         proc_result['run_result_id'] = run_result['id']
         set_proc(sl, proc_init['proc_name'])
 

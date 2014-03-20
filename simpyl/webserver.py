@@ -98,4 +98,4 @@ def api_get_figure(run_id, figure_name):
 def run_server(simpyl_object):
     global sl
     sl = simpyl_object
-    app.run(debug=True)
+    app.run(debug=False)
