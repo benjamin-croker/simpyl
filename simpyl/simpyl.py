@@ -1,7 +1,7 @@
 import inspect
 
-import webserver
-import run_manager as runm
+import simpyl.webserver as webserver
+import simpyl.run_manager as runm
 
 
 class Simpyl(object):
@@ -188,6 +188,8 @@ def _expand_proc(proc):
     """
     # get the number of arguments to expand over, by taking the length of the first argument
     # this assumes that all arguments are iterables with the same length
-    lens = len(proc[1].values()[0])
-    return [(proc[0], dict(map(lambda (k, v): (k, v[i]), proc[1].iteritems())))
-            for i in xrange(lens)]
+    lens = len(list(proc[1].values())[0])
+    return [(proc[0], dict([(k, v[i]) for k, v in proc[1].items()]))
+            for i in range(lens)]
+    # return [(proc[0], dict(map(lambda (k, v): (k, v[i]), proc[1].iteritems())))
+    #         for i in xrange(lens)]

@@ -46,8 +46,8 @@
           <tbody>
             <tr ng-repeat="p in run_result.proc_results track by $index">
               <td>{{p.run_order}}</td>
-              <td>{{p.timestamp_start}}</td>
               <td>{{p.proc_name}}</td>
+              <td>{{p.timestamp_start}}</td>
               <td>{{p.timestamp_stop}}</td>
               <td><pre>{{p.arguments_str}}</pre></td>
               <td><pre>{{p.result}}</pre></td>

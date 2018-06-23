@@ -2,13 +2,13 @@ import os
 import errno
 import logging
 import time
-import cPickle
+import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 import glob
 
-import database as db
-import settings as s
+import simpyl.database as db
+import simpyl.settings as s
 
 
 def to_number(string):
@@ -94,7 +94,7 @@ def get_figures(run_result_id):
 def get_figure(run_result_id, figure_name):
     """ gets the filename for the figure
     """
-    return open(run_path(run_result_id, figure_name))
+    return open(run_path(run_result_id, figure_name), 'rb')
 
 
 def read_cache(filename, environment_name):
@@ -104,8 +104,8 @@ def read_cache(filename, environment_name):
     if filename[-4:] == '.csv':
         obj = np.loadtxt(env_path(environment_name, filename), delimiter=',')
     else:
-        with open(env_path(environment_name, filename)) as f:
-            obj = cPickle.load(f)
+        with open(env_path(environment_name, filename), 'rb') as f:
+            obj = pickle.load(f)
     return obj
 
 
@@ -118,7 +118,7 @@ def write_cache(obj, filename, environment_name):
         np.savetxt(env_path(environment_name, filename), obj, delimiter=',')
     else:
         with open(env_path(environment_name, filename), 'wb') as f:
-            cPickle.dump(obj, f)
+            pickle.dump(obj, f)
 
     # update the database to register the cached file
     logging.info("[simpyl logged] {} written to cache".format(filename))

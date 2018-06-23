@@ -3,8 +3,8 @@ import json
 import os
 import mimetypes
 
-import database as db
-import run_manager as runm
+import simpyl.database as db
+import simpyl.run_manager as runm
 
 app = Flask(__name__, static_folder='site')
 sl = None

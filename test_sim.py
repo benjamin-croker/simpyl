@@ -52,12 +52,13 @@ def feature_importance():
     n_features = clf.feature_importances_.shape[0]
     plt.bar(np.arange(n_features), clf.feature_importances_)
     # 0.4 is half the default width
-    plt.xticks(np.arange(n_features)+0.4, ["Feature {}".format(i+1) for i in xrange(n_features)])
+    plt.xticks(np.arange(n_features)+0.4, ["Feature {}".format(i+1) for i in range(n_features)])
     sl.savefig("Feature Importances")
     return(clf)
 
 
 if __name__ == '__main__':
     # use the test database
-    db.reset_database(os.path.join('simpyl', 'tests', 'test.db'))
+    # db.reset_database(os.path.join('simpyl', 'tests', 'test_ml.db'))
+    db.use_database(os.path.join('simpyl', 'tests', 'test_ml.db'))
     sl.start()

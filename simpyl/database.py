@@ -5,7 +5,7 @@ database.py:
 import os
 import sqlite3
 
-import settings as s
+import simpyl.settings as s
 
 # the default db filename is copied so that it can be changed by reset_database
 DB_FILENAME = s.DEFAULT_DB_FILENAME
@@ -76,6 +76,14 @@ def reset_database(db_filename=DB_FILENAME):
     db_con.execute("INSERT INTO environment VALUES (?);", [s.DEFAULT_ENV_NAME])
     db_con.commit()
     db_con.close()
+
+
+def use_database(db_filename=DB_FILENAME):
+    """ sets the database filename
+    """
+   
+    global DB_FILENAME
+    DB_FILENAME = db_filename
 
 
 @with_db
