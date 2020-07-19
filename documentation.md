@@ -1,7 +1,4 @@
-# simpyl spec
-
-## Description
-[https://github.com/benjamin-croker/simpyl](https://github.com/benjamin-croker/simpyl)
+# Secification and API Docs
 
 ## Concepts
 * There is a hierarchy of environment -> run -> procedure
@@ -99,7 +96,7 @@ Get the log file from the given run and environment. Returns text
 	
 	/api/<env_name>/<run_id>/log        [GET]
 
-Database Tables
+## Database Tables
 
     CREATE TABLE environment (
         name TEXT PRIMARY KEY

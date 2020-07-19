@@ -30,35 +30,47 @@ def train_classifier(X_train, y_train, n_estimators=10, min_samples_split=2):
 
 def test_classifier(clf, X, y_true):
     y_pred = clf.predict(X)
-    return np.sum(y_pred == y_true) / float(y_pred.size)
-
+    return round(np.sum(y_pred == y_true) / float(y_pred.size), 3)
 
 @sl.add_procedure('trainer')
 def main_trainer(n_estimators, min_samples_split):
     X, y = load_data()
-    clf = train_classifier(X, y, n_estimators, min_samples_split)
-
+    trained_classifier = train_classifier(X, y, n_estimators, min_samples_split)
     # testing on the training set is bad practice, but serves as a demonstration
-    score = test_classifier(clf, X, y)
+    score = test_classifier(trained_classifier, X, y)
     sl.log("Overall accuracy: {}%".format(100.0 * score))
-    sl.write_cache(clf, "classifier.rf")
+    sl.write_cache(trained_classifier, "classifier.rf")
     return score
 
 
 @sl.add_procedure('plots')
 def feature_importance():
-    clf = sl.read_cache("classifier.rf")
+    trained_classifier = sl.read_cache("classifier.rf")
     # plot the classification probabilities for the first example
-    n_features = clf.feature_importances_.shape[0]
-    plt.bar(np.arange(n_features), clf.feature_importances_)
+    n_features = trained_classifier.feature_importances_.shape[0]
+    plt.bar(np.arange(n_features), trained_classifier.feature_importances_)
     # 0.4 is half the default width
-    plt.xticks(np.arange(n_features)+0.4, ["Feature {}".format(i+1) for i in range(n_features)])
+    plt.xticks(
+        np.arange(n_features)+0.4,
+        ["Feature {}".format(i+1) for i in range(n_features)]
+    )
     sl.savefig("Feature Importances")
-    return(clf)
+    return(trained_classifier)
 
 
 if __name__ == '__main__':
+    # run the reset to setup the database the first time
+    db.reset_database(os.path.join('simpyl', 'tests', 'test_ml.db'))
+
     # use the test database
-    # db.reset_database(os.path.join('simpyl', 'tests', 'test_ml.db'))
     db.use_database(os.path.join('simpyl', 'tests', 'test_ml.db'))
+
+    # a run can be initated from the webserver or in code
+    sl.run(
+        [('trainer', {'n_estimators': 3, 'min_samples_split': 10}),
+         ('plots', {})],
+        description="Run from code"
+    )
+
+    # start the webserver
     sl.start()

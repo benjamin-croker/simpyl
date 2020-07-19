@@ -1,138 +1,72 @@
 # simpyl
 
-A python library and web interface to manage running, configuring and logging computational simulations
+Track and log computational simulations and machine learning runs with a
+handful of Python decorators - via a web or code interface.
 
-## Description
-[https://github.com/benjamin-croker/simpyl](https://github.com/benjamin-croker/simpyl)
+## A Simple Example
 
-## Concepts
-* There is a hierarchy of environment -> run -> procedure
-* A run is the result of calling several procedures (Python functions). The arguments are set and return values recorded for each procedure.
-* Runs are performed in an environment. Basically environments exist to separate cache files, as they will be overwritten within an environment
-logs are just text files stored on the directory
-arguments to procedures can be entered manually or loaded from cache
-results of procedures are stored as text, or if the procedure caches its return values, the filenames of the cached files are stored
+`examle.py` shows how Simpyl can be used with a basic Random Forest classifier
+and the Iris dataset.
 
-## JSON Models
+Import the library, create a Simply object, and point it to an SQLite database.
+```python
+from simpyl import Simpyl
+import simpyl.database as db
 
-
-```
-	environment:
-	{
-	  “name”:             		string
-	}
-	argument:
-	{
-	  “name”:           	 	string,
-	  “value”:            		string,
-	  “from_cache”:        		boolean
-	}
-	proc_init:
-	{
-	  “proc_name”:        		string,
-	  “run_order”:        		number,
-	  “?arguments”:        		Array.of(argument)    
-	}
-	run_init:
-	{
-	  “description”:          	string,
-	  “environment_name”:    	string,
-	  “?proc_inits”:        	Array.of(proc_init)
-	}
-	
-	run_result:
-	{
-	  “id”:             		number,
-	  “timestamp_start:			number,
-	  “timestamp_stop:        	number,
-	  “status”:            		string,
-	  “description”:          	string,
-	  “environment_name”:    	string,
-	  “?proc_results”:        	Array.of(proc_call)
-	}
-	
-	proc_result:
-	{
-	  “id”:            			number
-	  “proc_name”:        		string,
-	  “run_order”:        		number,
-	  “timestamp_start”:    	number,
-	  “timestamp_stop”:    		number,
-	  “result”:            		string,
-	  “run_result_id”:         string,
-	  “?arguments”:        		Array.of(argument)    
-	}
+sl = Simpyl()
+db.use_database('example.db')
 ```
 
-## API URLs
-Get the list of environments. Returns a list of environment models
-
-	/api/envs/                    [GET]
-
-Add a new environment. POST data includes an environment JSON model
-
-	/api/newenv/                    [POST]
-
-Get a list of available procedure calls. Returns a list of available proc_init models
-
-	/api/proc_inits/                [GET]
-
-Get a list of runs performed in the given environment. Returns a list of JSON objects:
-
-```
-	{
-  		“id”:            number,
-  		“description”:          string,
-  		“URL”:            string #api URL to get the run data
-	}
+Register a function to be controlled by Simpyl. The function arguments are automatically
+picked up.
+```python
+@sl.add_procedure('trainer')
+def main_trainer(n_estimators, min_samples_split):
+    X, y = load_data()
+    trained_classifier = train_classifier(X, y, n_estimators, min_samples_split)
+    ...
 ```
 
-	/api/<env_name>/runs            [GET]
+Inside this function we can log information, and cache the trained estimator.
+```python
+    ...
+    sl.log("Overall accuracy: {}%".format(100.0 * score))
+    sl.write_cache(trained_classifier, "classifier.rf")
+    ...
+```
 
-Get the specified run model. Returns a run model
-	
-	/api/runs/<run_id>                [GET]
+Plots can also be saved. `sl.savefig()` will save any active Matplotlib plot.
+```python
+@sl.add_procedure('plots')
+def feature_importance():
+    trained_classifier = sl.read_cache("classifier.rf")
+    ...
+    # Plot a figure with matplotlib
+    ...
+    sl.savefig("Feature Importances")
+```
 
-Start a new run/ POST data includes a run_init JSON model
-	
-	/api/newrun                    [POST]
+Start the webserver with `sl.start()`. This gives us a web interface
+to build runs with our registered functions.
 
-Get the log file from the given run and environment. Returns text
-	
-	/api/<env_name>/<run_id>/log        [GET]
+![Add procedure](/docs/add_procedure.png)
 
-Database Tables
+![Add procedure](/docs/setup_run.png)
 
-    CREATE TABLE environment (
-        name TEXT PRIMARY KEY
-    );
+A page with arguments, results and saved plots is automatically created.
 
-    CREATE TABLE run_result (
-        id INTEGER PRIMARY KEY,
-        timestamp_start REAL,
-        timestamp_stop REAL,
-        description TEXT,
-        status TEXT,
-        environment_name TEXT,
-        FOREIGN KEY environment_name REFERENCES enviromnent(name)
-    );
+![Add procedure](/docs/run_details.png)
 
-    CREATE TABLE cachefile (
-        id INTEGER PRIMARY KEY,
-        filename TEXT,
-        procedure_call_id INTEGER,
-        FOREIGN KEY procedure_call_id REFERENCES procedure_call(id)
-    );
+Runs can be built an initiated via normal Python code as well.
+```python
+sl.run(
+    [
+        ('trainer', {'n_estimators': 3, 'min_samples_split': 10}),
+        ('plots', {})
+    ],
+    description="Run from code"
+)
+```
 
-    CREATE TABLE proc_result (
-        id INTEGER PRIMARY KEY,
-        proc_name TEXT,
-        run_order INTEGER,
-        timestamp_start REAL,
-        timestamp_stop REAL,
-        result TEXT,
-        arguments TEXT,
-        run_id INTEGER,
-        FOREIGN KEY run_id REFERENCES run(id)
-    );
-
+These will still be visible in the web interface.
+![Add procedure](/docs/run_list.png)
