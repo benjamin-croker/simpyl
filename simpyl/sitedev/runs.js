@@ -1,5 +1,5 @@
 var app = new Vue({
-  el: '#app',
+  el: '#vue_runs',
   created() {this.get_runs()},
   data: {
     runs: {}

@@ -14,30 +14,23 @@
     <a class="navbar-brand" href="/">Simpyl</a>
     <div class="collapse navbar-collapse">
       <ul class="navbar-nav mr-auto">
-        <li class="nav-item active">
-          <a class="nav-link" href="#">Home</a>
-        </li>
         <li class="nav-item">
-          <a class="nav-link" href="/runs">View Runs</a>
+          <a class="nav-link" href="/">Home</a>
+        </li>
+        <li class="nav-item active">
+          <a class="nav-link" href="#">View Runs</a>
         </li>
       </ul>
       <a class="btn btn-outline-info my-2 my-sm-0" href="/newrun">New Run</a>
     </div>
   </nav>
-
-  <div class="row my-3">
-    <div class="col-md-2"></div>
-    <div class="col-md-8">
-      <div class="jumbotron text-center">
-        <h1 class="display-4">Simpyl</h1>
-        <p class="lead">A simulation management system for Python</p>
-        <p class="lead">
-          <a class="btn btn-lg btn-info" href="/newrun" role="button">Start a New Run</a>
-        </p>
-      </div>
-    </div>
-    <div class="col-md-2"></div>
+  
+  <div>
+    <pre id="vue_runs">
+      {{ runs }}
+    </pre>
   </div>
 
-  
 </body>
+
+<script src="sitedev/runs.js"></script>
