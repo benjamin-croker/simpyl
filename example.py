@@ -71,6 +71,11 @@ if __name__ == '__main__':
          ('plots', {})],
         description="Run from code"
     )
+    sl.run(
+        [('trainer', {'n_estimators': 10, 'min_samples_split': 10}),
+         ('plots', {})],
+        description="Run from code with more estimators"
+    )
 
     # start the webserver
     sl.start()

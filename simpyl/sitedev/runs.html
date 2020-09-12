@@ -24,13 +24,46 @@
       <a class="btn btn-outline-info my-2 my-sm-0" href="/newrun">New Run</a>
     </div>
   </nav>
-  
-  <div>
-    <pre id="vue_runs">
-      {{ runs }}
-    </pre>
-  </div>
 
+  <main role="main" class="container-fluid">
+    <div class="row my-3">
+      <div class="col-lg-2"></div>
+      <div class="col-lg-8">
+        <div class="jumbotron text-center">
+          <h1 class="display-4">Previous Runs</h1>
+        </div>
+        <table id="vue_runs" class="table table-sm table-bordered table-hover">
+          <thead class="thead-dark">
+            <tr>
+              <th>Run ID</th>
+              <th>Start Time</th>
+              <th>Stop Time</th>
+              <th>Description</th>
+              <th>Results</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="run in runs" :key="run.id">
+              <td><a href="#">Run #{{run.id}}</a></td>
+              <td>{{run.timestamp_start}}</td>
+              <td>{{run.timestamp_stop}}</td>
+              <td>{{run.description}}</td>
+              <td>
+                <div v-for="pr in run.proc_results" class="card bg-light mb-3">
+                  <div class="card-header">{{pr.proc_name}}</div>
+                  <div class="card-body">
+                    <pre class="card-text">{{pr.result}}</pre>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="col-lg-2"></div>
+    </div>
+  </main>
 </body>
 
 <script src="sitedev/runs.js"></script>
+</html>
