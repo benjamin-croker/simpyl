@@ -30,40 +30,18 @@
       <div class="col-lg-2"></div>
       <div class="col-lg-8">
         <div class="jumbotron text-center">
-          <h1 class="display-4">Previous Runs</h1>
+          <h1 class="display-4">Run Detail</h1>
         </div>
-        <table id="vue_runs" class="table table-sm table-bordered table-hover">
-          <thead class="thead-dark">
-            <tr>
-              <th>Run ID</th>
-              <th>Start Time</th>
-              <th>Stop Time</th>
-              <th>Description</th>
-              <th>Results</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="run in runs" :key="run.id">
-              <td><a v-bind:href="'/rundetail?runid='+run.id">Run:{{run.id}}</a></td>
-              <td>{{run.timestamp_start}}</td>
-              <td>{{run.timestamp_stop}}</td>
-              <td>{{run.description}}</td>
-              <td>
-                <div v-for="pr in run.proc_results" class="card bg-light mb-3">
-                  <div class="card-header">{{pr.proc_name}}</div>
-                  <div class="card-body">
-                    <pre class="card-text">{{pr.result}}</pre>
-                  </div>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+
+        <pre id="vue_run">
+          {{ run }}
+        </pre>
+      
       </div>
       <div class="col-lg-2"></div>
     </div>
   </main>
 </body>
 
-<script src="sitedev/runs.js"></script>
+<script src="sitedev/run_detail.js"></script>
 </html>
