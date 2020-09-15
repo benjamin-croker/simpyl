@@ -27,32 +27,34 @@
 
   <main role="main" class="container-fluid">
     <div class="row my-3">
-      <div class="col-lg-2"></div>
-      <div class="col-lg-8">
+      <div class="col-lg-1"></div>
+      <div class="col-lg-10">
         <div class="jumbotron text-center">
           <h1 class="display-4">Previous Runs</h1>
         </div>
         <table id="vue_runs" class="table table-sm table-bordered table-hover">
           <thead class="thead-dark">
             <tr>
-              <th>Run ID</th>
-              <th>Start Time</th>
-              <th>Stop Time</th>
-              <th>Description</th>
-              <th>Results</th>
+              <th style="white-space:nowrap">Run ID</th>
+              <th style="white-space:nowrap">Start Time</th>
+              <th style="white-space:nowrap">Stop Time</th>
+              <th style="white-space:nowrap">Description</th>
+              <th style="white-space:nowrap">Results</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="run in runs" :key="run.id">
+            <tr v-for="run in run_results" :key="run.id">
               <td><a v-bind:href="'/rundetail?runid='+run.id">Run:{{run.id}}</a></td>
-              <td>{{run.timestamp_start}}</td>
-              <td>{{run.timestamp_stop}}</td>
+              <td style="white-space:nowrap">{{run.timestamp_start}}</td>
+              <td style="white-space:nowrap">{{run.timestamp_stop}}</td>
               <td>{{run.description}}</td>
               <td>
                 <div v-for="pr in run.proc_results" class="card bg-light mb-3">
                   <div class="card-header">{{pr.proc_name}}</div>
                   <div class="card-body">
-                    <pre class="card-text">{{pr.result}}</pre>
+                    <pre class="card-text" style="white-space: pre-line">
+                      {{pr.result}}
+                    </pre>
                   </div>
                 </div>
               </td>
@@ -60,7 +62,7 @@
           </tbody>
         </table>
       </div>
-      <div class="col-lg-2"></div>
+      <div class="col-lg-1"></div>
     </div>
   </main>
 </body>

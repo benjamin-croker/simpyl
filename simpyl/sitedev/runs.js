@@ -9,29 +9,27 @@ const toProcResultStrings = function(proc_results) {
   );
 }
 
+const formatRun = function(run) {
+  return {
+    ...run,
+    timestamp_start: toDateTimeString(run.timestamp_start),
+    timestamp_stop: toDateTimeString(run.timestamp_stop)
+  };
+}
+
 var app = new Vue({
   el: '#vue_runs',
   created() {this.getRuns()},
 
   data: {
-    runs: []
+    run_results: []
   },
 
   methods: {
-
     getRuns: function() {
       fetch('api/runs/')
         .then(response => response.json())
-        .then(jsonData => this.runs = jsonData.run_results.map(
-          (r) => {
-            return {
-              ...r,
-              timestamp_start: toDateTimeString(r.timestamp_start),
-              timestamp_stop: toDateTimeString(r.timestamp_stop)
-            }
-          }
-        ))
-        .catch(error => this.runs = [])
+        .then(jsonData => this.run_results = jsonData.run_results.map(formatRun))
     }
   },
 })

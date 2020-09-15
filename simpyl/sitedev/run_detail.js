@@ -9,43 +9,72 @@ const toProcResultStrings = function(proc_results) {
   );
 }
 
+const formatProc = function(proc) {
+  return {
+    ...proc,
+    timestamp_start: toDateTimeString(proc.timestamp_start),
+    timestamp_stop: toDateTimeString(proc.timestamp_stop)
+  };
+}
+
+const formatRun = function(run) {
+  return {
+    ...run,
+    proc_results: run.proc_results.map(formatProc)
+  }
+}
+
+const getRunId = function() {
+  let searchParams = new URLSearchParams(window.location.search)
+  if(!searchParams.has('runid')) {
+    return null;
+  }
+  return searchParams.get('runid');
+}
+
 var app = new Vue({
   el: '#vue_run',
-  created() {this.getRun()},
+  created() {
+    this.getRun();
+    this.getLog();
+    this.getFigures();
+  },
 
   data: {
-    run: {}
+    run_result: {},
+    log: "",
+    figures: []
   },
 
   methods: {
-
     getRun: function() {
-      let searchParams = new URLSearchParams(window.location.search)
-
-      if(!searchParams.has('runid')) {
-        this.run = {};
+      let runid = getRunId();
+      if(!runid) {
         return;
       }
-
-      fetch('api/run/'+searchParams.get('runid'))
+      fetch('api/run/'+runid)
         .then(response => response.json())
-        .then((jsonData) => {
-          let r = jsonData.run_result
-          this.run = {
-            ...r,
-            proc_results: r.proc_results.map(
-              (p) => {
-                return {
-                  ...p,
-                  timestamp_start: toDateTimeString(p.timestamp_start),
-                  timestamp_stop: toDateTimeString(p.timestamp_stop)
-                }
-              }
-            )
-          };
-        })
-        .catch(error => this.run = {})
+        .then(jsonData => this.run_result = formatRun(jsonData.run_result))
+    },
 
+    getLog: function() {
+      let runid = getRunId();
+      if(!runid) {
+        return;
+      }
+      fetch('api/log/'+runid)
+        .then(response => response.json())
+        .then(jsonData => this.log = jsonData.log)
+    },
+
+    getFigures: function() {
+      let runid = getRunId();
+      if(!runid) {
+        return;
+      }
+      fetch('api/figures/'+runid)
+        .then(response => response.json())
+        .then(jsonData => this.figures = jsonData.figures)
     }
-  },
+  }
 })

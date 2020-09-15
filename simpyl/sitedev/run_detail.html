@@ -17,8 +17,11 @@
         <li class="nav-item">
           <a class="nav-link" href="/">Home</a>
         </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/runs">View Runs</a>
+        </li>
         <li class="nav-item active">
-          <a class="nav-link" href="#">View Runs</a>
+          <a class="nav-link" href="#">Run Detail</a>
         </li>
       </ul>
       <a class="btn btn-outline-info my-2 my-sm-0" href="/newrun">New Run</a>
@@ -27,18 +30,73 @@
 
   <main role="main" class="container-fluid">
     <div class="row my-3">
-      <div class="col-lg-2"></div>
-      <div class="col-lg-8">
+      <div class="col-lg-1"></div>
+      <div class="col-lg-10">
         <div class="jumbotron text-center">
           <h1 class="display-4">Run Detail</h1>
         </div>
 
-        <pre id="vue_run">
-          {{ run }}
-        </pre>
-      
+        <div id="vue_run">
+          <h2>Description</h2>
+          {{ run_result.description }}
+
+          <h2>Procedures Called</h2>
+          <table class="table table-sm table-bordered table-hover">
+            <thead class="thead-dark">
+              <tr>
+                <th style="white-space:nowrap">Run Order</th>
+                <th style="white-space:nowrap">Procedure Name</th>
+                <th style="white-space:nowrap">Start Time</th>
+                <th style="white-space:nowrap">Stop Time</th>
+                <th style="white-space:nowrap">Arguments</th>
+                <th style="white-space:nowrap">Results</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="p in run_result.proc_results" :key="p.id">
+                <td>{{p.run_order}}</td>
+                <td>{{p.proc_name}}</td>
+                <td style="white-space:nowrap">{{p.timestamp_start}}</td>
+                <td style="white-space:nowrap">{{p.timestamp_stop}}</td>
+                <td>
+                  <div class="card bg-light mb-3">
+                    <div class="card-body">
+                      <pre class="card-text" style="white-space: pre-line">
+                        {{p.arguments_str}}
+                      </pre>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div class="card bg-light mb-3">
+                    <div class="card-body">
+                      <pre class="card-text" style="white-space: pre-line">
+                        {{p.result}}
+                      </pre>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          
+          <h2>Log</h2>
+          <div class="card bg-light mb-3">
+            <div class="card-body">
+              <pre class="card-text" style="white-space: pre-line">
+                {{log}}
+              </pre>
+            </div>
+          </div>
+          
+          <h2>Figures</h2>
+          <div v-for="f in figures">
+            <img v-bind:src="f"></img>
+          </div> 
+          
+        </div>
       </div>
-      <div class="col-lg-2"></div>
+      <div class="col-lg-1"></div>
     </div>
   </main>
 </body>
