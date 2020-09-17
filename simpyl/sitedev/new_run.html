@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>simpyl!</title>
+  <link rel="stylesheet" href="sitedev/assets/css/bootstrap.min.css">
+  <script src="sitedev/assets/js/jquery.min.js"></script>
+  <script src="sitedev/assets/js/bootstrap.min.js"></script>
+  <script src="sitedev/assets/js/vue.js"></script>
+</head>
+
+<body>
+  <nav class="navbar navbar-expand-md navbar-dark bg-dark">
+    <a class="navbar-brand" href="/">Simpyl</a>
+    <div class="collapse navbar-collapse">
+      <ul class="navbar-nav mr-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="/">Home</a>
+        </li>
+        <li class="nav-item active">
+          <a class="nav-link" href="#">View Runs</a>
+        </li>
+      </ul>
+      <a class="btn btn-outline-info my-2 my-sm-0" href="/newrun">New Run</a>
+    </div>
+  </nav>
+
+  <main role="main" class="container-fluid">
+    <div class="row my-3">
+      <div class="col-lg-1"></div>
+      <div class="col-lg-10">
+        <div class="jumbotron text-center">
+          <h1 class="display-4">Create New Run</h1>
+        </div>
+
+        <div id="vue_test">
+          <select v-model="input.selected">
+            <option disabled value="">Please select one</option>
+            <option>train</option>
+            <option>predict</option>
+          </select>
+          <input v-model="input.value" placeholder="edit me">
+          <button v-on:click="appendInput()">Add</button>
+          <h2>Input</h2>
+          <pre>{{ input }}</pre>
+          <h2>Array</h2>
+          <pre>{{ test_array }}</pre>
+        </div>
+        
+      </div>
+      <div class="col-lg-1"></div>
+    </div>
+  </main>
+</body>
+
+<script src="sitedev/new_run.js"></script>
+</html>
