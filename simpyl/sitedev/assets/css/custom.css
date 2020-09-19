@@ -1,0 +1,8 @@
+.fullheight{
+    position: -webkit-sticky;
+    position: sticky;
+    top: 56px;
+    height: calc(100vh - 56px);
+    overflow-x: hidden;
+    overflow-y: auto;
+}
