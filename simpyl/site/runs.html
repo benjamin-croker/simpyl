@@ -1,61 +1,78 @@
 <!doctype html>
-<html lang="en" ng-app="simpylApp">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <title>simpyl!</title>
   <link rel="stylesheet" href="site/assets/css/bootstrap.min.css">
-  <link rel="stylesheet" href="site/assets/css/bootstrap-theme.min.css">
-  <link rel="stylesheet" href="site/assets/css/jumbotron-narrow.css">
-
-  <script src="site/assets/js/jquery-1.11.0.min.js"></script>
-  <script src="site/assets/js/bootstrap.min.js"></script>
-  <script src="site/assets/js/angular.min.js"></script>
-  <script src="site/assets/js/app.js"></script>
-  <script src="site/assets/js/controllers.js"></script>
+  <link rel="stylesheet" href="site/assets/css/custom.css">
+  <script src="site/assets/js/vue.min.js"></script>
 </head>
 
-<body ng-controller="RunsCtrl">
+<body>
+  <nav class="navbar navbar-expand-md navbar-dark bg-dark sticky-top">
+    <a class="navbar-brand" href="/">Simpyl</a>
+  </nav>
 
-  <!-- Modals for setting up proc_init arguments -->
-
-
-  <div class="container">
-    <div class="header">
-      <h3 class="text-muted pull-right">simpyl!</h3>
-      <ul class="nav nav-pills">
-        <li><a href="/">Home</a></li>
-        <li class="active"><a href="#">View Runs</a></li>
-        <li><a href="/newrun">New Run</a></li>
-      </ul>
-    </div>
-
+  <main role="main" class="container-fluid">
     <div class="row">
-      <div class="col-lg-12">
-        <h2>Previous Runs</h2>
-        <table class="table table-condensed table-striped">
-          <thead>
-            <tr>
-              <th>Run ID</th>
-              <th>Start Time</th>
-              <th>Stop Time</th>
-              <th>Description</th>
-              <th>Results</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr ng-repeat="r in run_results track by $index">
-              <td><a href="/rundetail#?runid={{r.id}}">Run #{{r.id}}</a></td>
-              <td>{{r.timestamp_start}}</td>
-              <td>{{r.timestamp_stop}}</td>
-              <td>{{r.description}}</td>
-              <td><pre>{{r.result}}</pre></td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="col-2 navbar-light bg-light fullheight">
+        <nav class="navbar navbar-light bg-light">
+          <ul class="nav navbar-nav flex-column">
+            <li class="nav-item">
+              <a class="nav-link" href="/">Home</a>
+            </li>
+            <li class="nav-item active">
+              <a class="nav-link" href="#">View Runs</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/newrun">New Run</a>
+            </li>
+          </ul>
+        </nav>
       </div>
+
+      <div class="col-10">
+        <div class="row my-3">
+          <div class="col-12">
+            <div class="jumbotron text-center">
+              <h1 class="display-4">Previous Runs</h1>
+            </div>
+            <table id="vue_runs" class="table table-sm table-bordered table-hover table-responsive-lg">
+              <thead class="thead-dark">
+                <tr>
+                  <th style="white-space:nowrap">Run ID</th>
+                  <th style="white-space:nowrap">Start Time</th>
+                  <th style="white-space:nowrap">Stop Time</th>
+                  <th style="white-space:nowrap">Description</th>
+                  <th style="white-space:nowrap">Results</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="run in run_results" :key="run.id">
+                  <td><a v-bind:href="'/rundetail?runid='+run.id">Run:{{run.id}}</a></td>
+                  <td style="white-space:nowrap">{{run.timestamp_start}}</td>
+                  <td style="white-space:nowrap">{{run.timestamp_stop}}</td>
+                  <td>{{run.description}}</td>
+                  <td>
+                    <div v-for="pr in run.proc_results" class="card bg-light mb-3">
+                      <div class="card-header">{{pr.proc_name}}</div>
+                      <div class="card-body">
+                        <pre class="card-text" style="white-space: pre-line">
+                          {{pr.result}}
+                        </pre>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
     </div>
-
-  </div> <!-- /container -->
-
+  </main>
 </body>
+
+<script src="site/runs.js"></script>
 </html>

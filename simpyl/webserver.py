@@ -6,7 +6,7 @@ import mimetypes
 import simpyl.database as db
 import simpyl.run_manager as runm
 
-app = Flask(__name__, static_folder='sitedev')
+app = Flask(__name__, static_folder='site')
 sl = None
 
 
