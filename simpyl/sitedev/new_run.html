@@ -12,43 +12,70 @@
 <body>
   <nav class="navbar navbar-expand-md navbar-dark bg-dark">
     <a class="navbar-brand" href="/">Simpyl</a>
-    <div class="collapse navbar-collapse">
-      <ul class="navbar-nav mr-auto">
-        <li class="nav-item">
-          <a class="nav-link" href="/">Home</a>
-        </li>
-        <li class="nav-item active">
-          <a class="nav-link" href="#">View Runs</a>
-        </li>
-      </ul>
-      <a class="btn btn-outline-info my-2 my-sm-0" href="/newrun">New Run</a>
-    </div>
   </nav>
 
-  <main role="main" class="container-fluid">
-    <div class="row my-3">
-      <div class="col-lg-1"></div>
-      <div class="col-lg-10">
-        <div class="jumbotron text-center">
-          <h1 class="display-4">Create New Run</h1>
-        </div>
-
-        <div id="vue_test">
-          <select v-model="input.selected">
-            <option disabled value="">Please select one</option>
-            <option>train</option>
-            <option>predict</option>
-          </select>
-          <input v-model="input.value" placeholder="edit me">
-          <button v-on:click="appendInput()">Add</button>
-          <h2>Input</h2>
-          <pre>{{ input }}</pre>
-          <h2>Array</h2>
-          <pre>{{ test_array }}</pre>
-        </div>
-        
+  <main role="main" class="container-fluid" style="height:calc(100vh - 60px);">
+  <!-- <main role="main" class="container-fluid"> -->
+    <div class="row">
+      <div class="col-2 navbar-light bg-light" style="height:calc(100vh - 60px);">
+        <nav class="navbar navbar-light bg-light">
+          <ul class="nav navbar-nav flex-column">
+            <li class="nav-item">
+              <a class="nav-link" href="/">Home</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/runs">View Runs</a>
+            </li>
+            <li class="nav-item active">
+              <a class="nav-link" href="#">New Run</a>
+            </li>
+          </ul>
+        </nav>
       </div>
-      <div class="col-lg-1"></div>
+      
+      <div class="col-10">
+        <div class="row my-3">
+          <div class="col-lg-1"></div>
+          <div class="col-lg-10">
+            <div class="jumbotron text-center">
+              <h1 class="display-4">Create New Run</h1>
+            </div>
+
+            <div id="vue_test">
+
+              <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                  <label class="input-group-text">Procedure</label>
+                </div>
+                <select v-model="proc_working" class="form-control">
+                  <option v-for="proc_init in proc_inits" v-bind:value="proc_init" class="form-control">
+                    {{ proc_init.proc_name }}
+                  </option>
+                </select>
+              </div>
+              
+              <div v-for="argument in proc_working.arguments" class="input-group mb-3">
+                <div class="input-group-prepend">
+                  <span class="input-group-text">{{ argument.name }}</span>
+                </div>
+                <input type="text" class="form-control" v-model="argument.value">
+              </div>
+
+              <button v-on:click="addProcToRun()"
+                type="button" class="btn btn-outline-info">
+                Add Procedure
+              </button>
+
+              <h2>Input</h2>
+              <pre>{{ proc_working }}</pre>
+              <h2>Run data</h2>
+              <pre>{{ run_init }}</pre>
+            </div>
+            
+          </div>
+          <div class="col-lg-1"></div>
+        </div>
+      </div>
     </div>
   </main>
 </body>
