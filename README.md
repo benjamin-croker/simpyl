@@ -55,7 +55,8 @@ to build runs with our registered functions.
 
 A page with arguments, results and saved plots is automatically created.
 
-![Add procedure](/docs/run_details.png)
+![Add procedure](/docs/run_details1.png)
+![Add procedure](/docs/run_details2.png)
 
 Runs can be built an initiated via normal Python code as well.
 ```python
