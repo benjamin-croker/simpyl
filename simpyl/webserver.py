@@ -1,4 +1,4 @@
-from flask import Flask, request, abort, send_file, url_for
+from flask import Flask, request, abort, send_file, url_for, jsonify
 import json
 import os
 import mimetypes
@@ -54,7 +54,7 @@ def api_new_envs():
 
 @app.route('/api/runs/')
 def api_get_runs():
-    return json.dumps({'run_results': [r for r in db.get_run_results()]})
+    return jsonify({'run_results': [r for r in db.get_run_results()]})
 
 
 @app.route('/api/run/<int:run_id>')

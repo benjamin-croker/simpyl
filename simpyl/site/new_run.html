@@ -1,114 +1,123 @@
 <!doctype html>
-<html lang="en" ng-app="simpylApp">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <title>simpyl!</title>
   <link rel="stylesheet" href="site/assets/css/bootstrap.min.css">
-  <link rel="stylesheet" href="site/assets/css/bootstrap-theme.min.css">
-  <link rel="stylesheet" href="site/assets/css/jumbotron-narrow.css">
-
-  <script src="site/assets/js/jquery-1.11.0.min.js"></script>
-  <script src="site/assets/js/bootstrap.min.js"></script>
-  <script src="site/assets/js/angular.min.js"></script>
-  <script src="site/assets/js/app.js"></script>
-  <script src="site/assets/js/controllers.js"></script>
+  <link rel="stylesheet" href="site/assets/css/custom.css">
+  <script src="site/assets/js/vue.min.js"></script>
 </head>
 
-<body ng-controller="NewRunCtrl">
+<body>
+  <nav class="navbar navbar-expand-md navbar-dark bg-dark sticky-top">
+    <a class="navbar-brand" href="/">Simpyl</a>
+  </nav>
 
-  <!-- Modals for setting up proc_init arguments -->
+  <main role="main" class="container-fluid">
+    <div class="row">
+      <div class="col-2 navbar-light bg-light fullheight">
+        <nav class="navbar navbar-light bg-light">
+          <ul class="nav navbar-nav flex-column">
+            <li class="nav-item">
+              <a class="nav-link" href="/">Home</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/runs">View Runs</a>
+            </li>
+            <li class="nav-item active">
+              <a class="nav-link" href="#">New Run</a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+      
+      <div class="col-10">
+        <div class="row my-3" id="vue_test">
+          <div class="col-12">
+            <div class="jumbotron text-center">
+              <h1 class="display-4">Create New Run</h1>
+            </div>
 
-  <div class="modal fade" id="procModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-          <h4 class="modal-title">Set arguments for {{ selected_proc_init.proc_name }}</h4>
-        </div>
-        <div class="modal-body">
-          <div ng-repeat="arg in selected_proc_init.arguments">
-            <p>{{ arg.name }}</p>
-            <input class="add-input" placeholder="{{arg.value}}" type="text"
-                   ng-model=selected_proc_init.arguments[$index].value />
+            <div class="row">
+              <div class="col-4">
+
+                <div class="card">
+                  <div class="card-header">New Run</div>
+                  <div class="card-body">
+                    <div class="input-group mb-3">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text">Description</span>
+                      </div>
+                      <input type="text" class="form-control" v-model="run_init.description">
+                    </div>
+                    <button v-on:click="startRun()" type="button" class="btn btn-primary">
+                      Start
+                   </button>
+                  </div>
+                </div>
+
+                <br>
+
+                <div class="card">
+                  <div class="card-header">Add Procedure</div>
+                  <div class="card-body">
+                    <div class="input-group mb-3">
+                      <div class="input-group-prepend">
+                        <label class="input-group-text">Procedure</label>
+                      </div>
+                      <select v-model="proc_working" class="form-control">
+                        <option v-for="proc_init in proc_inits" v-bind:value="proc_init" class="form-control">
+                          {{ proc_init.proc_name }}
+                        </option>
+                      </select>
+                    </div>
+                    <div v-for="argument in proc_working.arguments" class="input-group mb-3">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text">{{ argument.name }}</span>
+                      </div>
+                      <input type="text" class="form-control" v-model="argument.value">
+                    </div>
+                    <button v-on:click="addProcToRun()" type="button" class="btn btn-outline-info">
+                      Add
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-8">
+                <table class="table table-sm table-bordered table-hover">
+                  <thead class="thead-dark">
+                    <tr>
+                      <th style="white-space:nowrap">Run Order</th>
+                      <th style="white-space:nowrap">Procedure Name</th>
+                      <th style="white-space:nowrap">Arguments</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="p in run_init.proc_inits" :key="p.run_order">
+                      <td>{{p.run_order}}</td>
+                      <td>{{p.proc_name}}</td>
+                      <td>
+                        <div class="card bg-light mb-3">
+                          <div class="card-body">
+                            <pre class="card-text" style="white-space: pre-line">
+                              {{p.arguments_str}}
+                            </pre>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          
           </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-          <button ng-click=addProc() type="button" class="btn btn-primary" data-dismiss="modal">Add Procedure</button>
-        </div>
       </div>
     </div>
-  </div>
-
-  <div class="modal fade" id="envModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-          <h4 class="modal-title">Create New Environment</h4>
-        </div>
-        <div class="modal-body">
-          <input class="add-input" placeholder="" type="text" ng-model="run_init.environment_name" />
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-          <button ng-click=addEnv() type="button" class="btn btn-primary" data-dismiss="modal">New Environment</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="container">
-    <div class="header">
-      <h3 class="text-muted pull-right">simpyl!</h3>
-      <ul class="nav nav-pills">
-        <li><a href="/">Home</a></li>
-        <li><a href="/runs">View Runs</a></li>
-        <li class="active"><a href="#">New Run</a></li>
-      </ul>
-    </div>
-
-    <div class="row">
-      <div class="col-lg-3">
-        <h2>Add Procedure</h2>
-        <select ng-model="selected_proc_init" ng-options="p.proc_name for p in avail_proc_inits"></select>
-        <button class="btn btn-primary" data-toggle="modal" data-target="#procModal">add</button>
-      
-        <h2>Environment</h2>
-        <select ng-model="run_init.environment_name" ng-options="env for env in envs"></select>
-        <button class="btn btn-primary" data-toggle="modal" data-target="#envModal">new</button>
-
-        <h2></h2>
-        <button ng-click=postRun() class="btn btn-success">Start Run</button>
-      </div>
-
-      <div class="col-lg-9">
-        <h2>Description</h2>
-        <textarea ng-model="run_init.description" class="form-control" rows="3"></textarea>
-      </div>
-
-    <div class="row">
-      <div class="col-lg-9 col-lg-offset-3">
-        <table class="table table-condensed">
-          <thead>
-            <tr>
-              <th>Run Order</th>
-              <th>Procedure Name</th>
-              <th>Arguments</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr ng-repeat="p in run_init.proc_inits track by $index">
-              <td>{{p.run_order}}</td>
-              <td>{{p.proc_name}}</td>
-              <td>{{p.arguments_str}}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-  </div> <!-- /container -->
-
+  </main>
 </body>
+
+<script src="site/new_run.js"></script>
 </html>

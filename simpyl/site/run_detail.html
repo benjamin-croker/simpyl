@@ -1,76 +1,112 @@
 <!doctype html>
-<html lang="en" ng-app="simpylApp">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <title>simpyl!</title>
   <link rel="stylesheet" href="site/assets/css/bootstrap.min.css">
-  <link rel="stylesheet" href="site/assets/css/bootstrap-theme.min.css">
-  <link rel="stylesheet" href="site/assets/css/jumbotron-narrow.css">
-
-  <script src="site/assets/js/jquery-1.11.0.min.js"></script>
-  <script src="site/assets/js/bootstrap.min.js"></script>
-  <script src="site/assets/js/angular.min.js"></script>
-  <script src="site/assets/js/app.js"></script>
-  <script src="site/assets/js/controllers.js"></script>
+  <link rel="stylesheet" href="site/assets/css/custom.css">
+  <script src="site/assets/js/vue.min.js"></script>
 </head>
 
-<body ng-controller="RunDetailCtrl">
-  <div class="container">
-    <div class="header">
-      <h3 class="text-muted pull-right">simpyl!</h3>
-      <ul class="nav nav-pills">
-        <li><a href="/">Home</a></li>
-        <li><a href="/runs">View Runs</a></li>
-        <li><a href="/newrun">New Run</a></li>
-        <li class="active"><a href="#">Run #{{run_result.id}} Detail</a></li>
-      </ul>
-    </div>
+<body>
+  <nav class="navbar navbar-expand-md navbar-dark bg-dark sticky-top">
+    <a class="navbar-brand" href="/">Simpyl</a>
+  </nav>
 
+  <main role="main" class="container-fluid">
     <div class="row">
-      <div class="col-lg-12">
-        <h2>Description</h2>
-        {{run_result.description}}
+      <div class="col-2 navbar-light bg-light fullheight">
+        <nav class="navbar navbar-light bg-light">
+          <ul class="nav navbar-nav flex-column">
+            <li class="nav-item">
+              <a class="nav-link" href="/">Home</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/runs">View Runs</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/newrun">New Run</a>
+            </li>
+            <li class="nav-item active">
+              <a class="nav-link" href="#">Run Detail</a>
+            </li>
+          </ul>
+        </nav>
+      </div>
 
-        <h2>Procedures Called</h2>
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Run Order</th>
-              <th>Procedure Name</th>
-              <th>Start Time</th>
-              <th>Stop Time</th>
-              <th>Arguments</th>
-              <th>Results</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr ng-repeat="p in run_result.proc_results track by $index">
-              <td>{{p.run_order}}</td>
-              <td>{{p.proc_name}}</td>
-              <td>{{p.timestamp_start}}</td>
-              <td>{{p.timestamp_stop}}</td>
-              <td><pre>{{p.arguments_str}}</pre></td>
-              <td><pre>{{p.result}}</pre></td>
-            </tr>
-          </tbody>
-        </table>
-        
-        <h2>Log</h2>
-        <pre ng-bind="log"></pre>
+      <div class="col-10">
+        <div class="row my-3">
+          <div class="col-12">
+            <div class="jumbotron text-center">
+              <h1 class="display-4">Run Detail</h1>
+            </div>
 
-        <h2>Figures</h2>
-        <div ng-repeat="fig in figure_list track by $index">
-          <img ng-src={{fig}}></img>
+            <div id="vue_run">
+              <h2>Description</h2>
+              {{ run_result.description }}
+
+              <h2>Procedures Called</h2>
+              <table class="table table-sm table-bordered table-hover table-responsive-lg">
+                <thead class="thead-dark">
+                  <tr>
+                    <th style="white-space:nowrap">Run Order</th>
+                    <th style="white-space:nowrap">Procedure Name</th>
+                    <th style="white-space:nowrap">Start Time</th>
+                    <th style="white-space:nowrap">Stop Time</th>
+                    <th style="white-space:nowrap">Arguments</th>
+                    <th style="white-space:nowrap">Results</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="p in run_result.proc_results" :key="p.id">
+                    <td>{{p.run_order}}</td>
+                    <td>{{p.proc_name}}</td>
+                    <td style="white-space:nowrap">{{p.timestamp_start}}</td>
+                    <td style="white-space:nowrap">{{p.timestamp_stop}}</td>
+                    <td>
+                      <div class="card bg-light mb-3">
+                        <div class="card-body">
+                          <pre class="card-text" style="white-space: pre-line">
+                            {{p.arguments_str}}
+                          </pre>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="card bg-light mb-3">
+                        <div class="card-body">
+                          <pre class="card-text" style="white-space: pre-line">
+                            {{p.result}}
+                          </pre>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              
+              <h2>Log</h2>
+              <div class="card bg-light mb-3">
+                <div class="card-body">
+                  <pre class="card-text" style="white-space: pre-line">
+                    {{log}}
+                  </pre>
+                </div>
+              </div>
+              
+              <h2>Figures</h2>
+              <div v-for="f in figures">
+                <img v-bind:src="f"></img>
+              </div> 
+              
+            </div>
+          </div>
         </div>
       </div>
+
     </div>
-
-    <div class="row">
-      <div class="col-lg-9 col-lg-offset-3">
-      </div>
-    </div>
-
-  </div> <!-- /container -->
-
+  </main>
 </body>
+
+<script src="site/run_detail.js"></script>
 </html>
