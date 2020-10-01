@@ -36,7 +36,7 @@ def run_detail():
 
 @app.route('/api/proc_inits')
 def api_proc_inits():
-    return json.dumps({'proc_inits': sl._proc_inits})
+    return json.dumps({'proc_inits': sl.get_proc_inits()})
 
 
 @app.route('/api/envs')
@@ -68,7 +68,8 @@ def api_new_run():
             [k in request.json for k in
              ['description', 'environment_name', 'proc_inits']]):
         abort(400)
-    return json.dumps(runm.run(sl, request.json, convert_args_to_numbers=True)), 201
+    run_result = sl.run_from_init(request.json, convert_args_to_numbers=True)
+    return json.dumps(run_result), 201
 
 
 @app.route('/api/log/<int:run_id>')

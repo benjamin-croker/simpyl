@@ -1,7 +1,6 @@
 import os
 import errno
 import logging
-import time
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
@@ -73,8 +72,10 @@ def savefig(title, proc_name, run_result_id, *args, **kwargs):
     """ saves a figure to the run folder. *args and **kwargs are passed to the
         matplotlib.savefig function
     """
-    plt.savefig(run_path(run_result_id, s.FIGURE_FORMAT.format(proc_name, title)),
-                *args, **kwargs)
+    plt.savefig(
+        run_path(run_result_id, s.FIGURE_FORMAT.format(proc_name, title)),
+        *args, **kwargs
+    )
 
 
 def get_log(run_result_id):
@@ -124,49 +125,32 @@ def write_cache(obj, filename, environment_name):
     logging.info("[simpyl logged] {} written to cache".format(filename))
 
 
-def set_environment(sl, environment_name):
+def set_environment(environment_name):
     """ creates all the necessary directories and database entries for a new environment
-        sets up the Simpyl object for a run in the environment
     """
     # make all the directories for the environment if they don't exist
     create_dir_if_needed(env_path(environment_name))
 
     # register the environment in the database and set the current env
     db.register_environment(environment_name)
-    sl._current_env = environment_name
 
 
-def set_run(sl, run_result_id, description):
-    """ creates all the necessary directories and sets up the Simpyl object for
-        the run
+def set_run(run_result_id, description):
+    """ creates all the necessary directories and sets up the Simpyl object for a run
     """
     # turn the run_result_id into a string, so it can be joined in directory names
     run_result_id = str(run_result_id)
 
     # create the directories for the run
     create_dir_if_needed(run_path(run_result_id))
-    sl._current_run = run_result_id
-
-    # set up logging to log to a file
-    sl._logger = run_logger(run_result_id)
 
     # write a text file with the description as as text file
-    with open(os.path.join(run_path(run_result_id),
-                           s.DESCRIPTION_FORMAT.format(run_result_id)), 'w') as f:
+    filename = os.path.join(
+        run_path(run_result_id),
+        s.DESCRIPTION_FORMAT.format(run_result_id)
+    )
+    with open(filename, 'w') as f:
         f.write(description)
-
-
-def set_proc(sl, proc_name):
-    """ sets up the simpyl object for the procedure
-    """
-    sl._current_proc = proc_name
-
-
-def reset_sl_state(sl):
-    sl._current_env = ''
-    sl._current_run = ''
-    sl._current_proc = ''
-    sl._logger = stream_logger()
 
 
 def get_arguments_str(arguments):
@@ -175,11 +159,22 @@ def get_arguments_str(arguments):
     return ", ".join(["{}:{}".format(k, arguments[k]) for k in arguments])
 
 
+def to_proc_inits(procs):
+    """ takes a list of (proc_name, arguments) tuples and converts them to a list
+        of proc_inits
+    """
+    return [{'proc_name': p[0],
+             'run_order': i,
+             'arguments': [{'name': k, 'value': p[1][k]} for k in p[1]],
+             'arguments_str': get_arguments_str(p[1])}
+            for i, p in enumerate(procs)]
+
+
 def to_run_result(run_init):
     """ creates a run_result template from a run_init
     """
     return {'id': None,
-            'timestamp_start': time.time(),
+            'timestamp_start': None,
             'timestamp_stop': None,
             'status': 'running',
             'description': run_init['description'],
@@ -193,7 +188,7 @@ def to_proc_result(proc_init):
     return {'id': None,
             'proc_name': proc_init['proc_name'],
             'run_order': None,
-            'timestamp_start': time.time(),
+            'timestamp_start': None,
             'timestamp_stop': None,
             'result': None,
             'arguments': proc_init['arguments'],
@@ -201,60 +196,10 @@ def to_proc_result(proc_init):
             'run_result_id': None}
 
 
-def run(sl, run_init, convert_args_to_numbers=True):
-    """ set or create the current environment
-
-        if to_number is True, string arguments will be converted to numbers
-        if they can with to_number()
+def create_run_init(procs, description, environment=s.DEFAULT_ENV_NAME):
+    """ takes a list of (proc_name, arguments) tuples and converts them to a
+        a correctly formatted run_init
     """
-    # use the default environment if none is given
-    if run_init['environment_name'] is None:
-        run_init['environment_name'] = s.DEFAULT_ENV_NAME
-    set_environment(sl, run_init['environment_name'])
-
-    # register run in database and create a run result
-    run_result = to_run_result(run_init)
-    run_result['id'] = db.register_run_result(run_result)
-    set_run(sl, run_result['id'], run_result['description'])
-
-    sl._logger.info("[simpyl logged] run #{} started with environment {}".format(
-        run_result['id'], run_result['environment_name']))
-
-    # call all the procedures
-    for run_order, proc_init in enumerate(run_init['proc_inits']):
-        # run the procedure
-        proc_result = to_proc_result(proc_init)
-        # set the run order
-        proc_result['run_order'] = run_order
-
-        proc_result['run_result_id'] = run_result['id']
-        set_proc(sl, proc_init['proc_name'])
-
-        # work out the arguments, converting stings to numbers if applicable
-        if convert_args_to_numbers:
-            kwargs = dict((kw, to_number(value))
-                          for kw, value in [(arg['name'], arg['value'])
-                                            for arg in proc_init['arguments']])
-        else:
-            kwargs = dict((kw, value)
-                          for kw, value in [(arg['name'], arg['value'])
-                                            for arg in proc_init['arguments']])
-
-        sl._logger.info(
-            "[simpyl logged] Procedure {} called with arguments {}".format(
-                proc_init['proc_name'], kwargs))
-        results = sl._procedures[proc_init['proc_name']](**kwargs)
-
-        proc_result['timestamp_stop'] = time.time()
-        proc_result['result'] = str(results)
-
-        db.register_proc_result(proc_result)
-        run_result['proc_results'] += [proc_result]
-
-    # register the run result
-    run_result['timestamp_stop'] = time.time()
-    run_result['status'] = 'complete'
-    db.update_run_result(run_result)
-
-    reset_sl_state(sl)
-    return run_result
+    return {'description': description,
+            'environment_name': environment,
+            'proc_inits': to_proc_inits(procs)}

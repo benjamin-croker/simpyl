@@ -1,7 +1,10 @@
 import inspect
+import time
 
 import simpyl.webserver as webserver
 import simpyl.run_manager as runm
+import simpyl.database as db
+import simpyl.settings as s
 
 
 class Simpyl(object):
@@ -12,6 +15,33 @@ class Simpyl(object):
         self._current_run = ''
         self._current_proc = ''
         self._logger = runm.stream_logger()
+
+    def reset_state(self):
+        self._current_env = ''
+        self._current_run = ''
+        self._current_proc = ''
+        self._logger = runm.stream_logger()
+
+    def set_environment(self, environment_name):
+        """ creates all the necessary directories and database entries for a new environment
+            and sets the current environment state
+        """
+        runm.set_environment(environment_name)
+        self._current_env = environment_name
+
+    def set_run(self, run_result_id, description):
+        """ creates all the necessary directories and sets up the Simpyl object for a run
+            and sets the current run state
+        """
+        runm.set_run(run_result_id, description)
+        self._current_run = run_result_id
+        # set up logging to log to a file
+        self._logger = runm.run_logger(run_result_id)
+
+    def set_proc(self, proc_name):
+        """ sets the current proc state
+        """
+        self._current_proc = proc_name
 
     def log(self, text):
         """ logs some information
@@ -60,8 +90,73 @@ class Simpyl(object):
             return fn
 
         return decorator
+    
+    def get_proc_inits(self):
+        return self._proc_inits
 
-    def run(self, procs, description, environment=None):
+    def run_from_init(self, run_init, convert_args_to_numbers):
+        """ starts a run from a run_init dictionary
+        """
+        # use the default environment if none is given
+        if run_init['environment_name'] is None:
+            run_init['environment_name'] = s.DEFAULT_ENV_NAME
+        self.set_environment(run_init['environment_name'])
+
+        # register run in database and create a run result
+        run_result = runm.to_run_result(run_init)
+        run_result['id'] = db.register_run_result(run_result)
+
+        self.set_run(run_result['id'], run_result['description'])
+        self._logger.info(
+            "[simpyl logged] run #{} started with environment {}".format(
+                run_result['id'], run_result['environment_name']
+            )
+        )
+        run_result['timestamp_start'] = time.time()
+
+        # call all the procedures
+        for run_order, proc_init in enumerate(run_init['proc_inits']):
+            # run the procedure
+            proc_result = runm.to_proc_result(proc_init)
+            # set the run order
+            proc_result['run_order'] = run_order
+
+            proc_result['run_result_id'] = run_result['id']
+            self.set_proc(proc_init['proc_name'])
+
+            # work out the arguments, converting stings to numbers if applicable
+            if convert_args_to_numbers:
+                kwargs = dict(
+                    (kw, runm.to_number(value))
+                    for kw, value in [(arg['name'], arg['value']) for arg in proc_init['arguments']]
+                )
+            else:
+                kwargs = dict(
+                    (kw, value)
+                    for kw, value in [(arg['name'], arg['value']) for arg in proc_init['arguments']]
+                )
+
+            self._logger.info(
+                "[simpyl logged] Procedure {} called with arguments {}".format(
+                    proc_init['proc_name'], kwargs
+                )
+            )
+            proc_result['timestamp_start'] = time.time()
+            results = self._procedures[proc_init['proc_name']](**kwargs)
+            proc_result['timestamp_stop'] = time.time()
+            proc_result['result'] = str(results)
+
+            db.register_proc_result(proc_result)
+            run_result['proc_results'] += [proc_result]
+
+        # register the run result
+        run_result['timestamp_stop'] = time.time()
+        run_result['status'] = 'complete'
+        
+        self.reset_state()
+        return run_result
+
+    def run(self, procs, description, environment=s.DEFAULT_ENV_NAME):
         """ starts a run with the listed procedures
             
             procs:
@@ -70,36 +165,12 @@ class Simpyl(object):
                 Run description as a string
             environment:
                 Run environment as a string. If it is None, the default environment is used.
-        """
-        # turn the procs into proc_init dictionaries
-        proc_inits = _convert_to_proc_inits(procs)
-        run_init = {'description': description, 'environment_name': environment, 'proc_inits': proc_inits}
-        runm.run(self, run_init, convert_args_to_numbers=False)
+        """        
+        return self.run_from_init(
+            runm.create_run_init(procs, description, environment),
+            convert_args_to_numbers=False
+        )
+    
 
     def start(self):
         webserver.run_server(self)
-
-
-def _convert_to_proc_inits(procs):
-    """ takes a list of (proc_name, arguments) tuples and converts them to a list
-        of proc_inits
-    """
-    return [{'proc_name': p[0],
-             'run_order': i,
-             'arguments': [{'name': k, 'value': p[1][k]} for k in p[1]],
-             'arguments_str': runm.get_arguments_str(p[1])}
-            for i, p in enumerate(procs)]
-
-
-def _expand_proc(proc):
-    """ takes a (proc_name, arguments) tuple and expends it into a list
-        of procs, with the i_th proc having the i_th element of each
-        argument in the arguments dict
-    """
-    # get the number of arguments to expand over, by taking the length of the first argument
-    # this assumes that all arguments are iterables with the same length
-    lens = len(list(proc[1].values())[0])
-    return [(proc[0], dict([(k, v[i]) for k, v in proc[1].items()]))
-            for i in range(lens)]
-    # return [(proc[0], dict(map(lambda (k, v): (k, v[i]), proc[1].iteritems())))
-    #         for i in xrange(lens)]
