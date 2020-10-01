@@ -22,13 +22,5 @@ if __name__ == '__main__':
     sl.run([('foo', {'a': [1, 2, 3], 'b': [4, 5, 6]}),
             ('bar', {'a': 10, 'b': 20})],
            description="No expansion")
-    sl.run([('foo', {'a': [1, 2, 3], 'b': [4, 5, 6]}),
-            ('bar', {'a': [1, 2], 'b': [4, 5]})],
-           description="By proc expansion",
-           expand_args='by_proc')
-    sl.run([('foo', {'a': [1, 2, 3], 'b': [4, 5, 6]}),
-            ('bar', {'a': [1, 2, 3], 'b': [4, 5, 6]})],
-           description="By run expansion, separating runs",
-           expand_args='by_run', separate_runs=True)
 
     sl.start()

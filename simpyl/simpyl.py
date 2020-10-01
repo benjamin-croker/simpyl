@@ -61,9 +61,8 @@ class Simpyl(object):
 
         return decorator
 
-    def run(self, procs, description, environment=None, expand_args=None, separate_runs=True):
-        """ starts a run with the listed procedures. Lists of procedures can also be passed,
-            which are turned into multiple runs according to the expand_args argument
+    def run(self, procs, description, environment=None):
+        """ starts a run with the listed procedures
             
             procs:
                 a list of (procedure, argument_dict) tuples in the form 'proc_name', {'arg_name':arg_value,...}
@@ -71,100 +70,11 @@ class Simpyl(object):
                 Run description as a string
             environment:
                 Run environment as a string. If it is None, the default environment is used.
-            expand_args:
-                'by_proc', 'by_run' or None
-                Used to allow procedures to be called multiple times in each run,
-                by passing the arguments in the procs tuples as lists instead of single values.
-            
-                None: each proc is called once, in order, with the arguments being treated as single values
-            
-                'by_proc': Each proc in the list is called multiple times, and the list is executed once.
-                    All arguments for a single procedures must be iterable with with same length.
-                    With each iteration i, the ith element of the argument value is passed into the procedure.
-                    Use this option when procedures are largely independent and you want to execute the same
-                    procedures several times with different arguments
-                    e.g.
-                        Simpyl.run([('foo', {'foo_arg': [1,2,3]}),
-                                ('bar', {'bar_arg':[3,4]}), description='', expand_args='by_proc')
-                    will call
-                        foo(1), foo(2), foo(3)
-                    then
-                        bar(3), bar(4)
-
-                'by_run':
-                    Each proc in the list is called in order, and the list is executed N times.
-                    All arguments for all procedures must be iterable with length N.
-                    With each iteration i, the ith element of the argument value is passed into the procedure.
-                    Use this option when one procedure will affect the next one, and you want to run through
-                    a chain of procedures multiple times with different arguments. e.g.
-                    e.g
-                        Simpyl.run([('foo', {'foo_arg': [1,2]}),
-                                ('bar', {'bar_arg':[3,4]}), description='', expand_args='by_run')
-                    will call
-                        foo(1), bar(3),
-                    then
-                        foo(2), bar(4)
-
-            separate_runs:
-                If True, and expand_args=='by_run', then each run through the list of
-                procedures will be stored as a separate run.
-                Ignored if expand_args is anything else.
         """
-
-        # check the args are valid
-        if expand_args not in (None, 'by_proc', 'by_run'):
-            raise ValueError("expand_args must by None, 'by_proc' or 'by_run'")
-
-        # if there's no expansion, just pass the procs to a new run
-        if expand_args is None:
-            # turn the procs into proc_init dictionaries
-            proc_inits = _convert_to_proc_inits(procs)
-            run_init = {'description': description, 'environment_name': environment, 'proc_inits': proc_inits}
-            runm.run(self, run_init, convert_args_to_numbers=False)
-
-        # if expanding by proc, get a list repeating all the procedures
-        if expand_args == 'by_proc':
-            # check that all arguments are the same length
-            # first get all the lengths, proc[1] is the args dict
-            lens = [[len(proc[1][k]) for k in proc[1]] for proc in procs]
-            # check the first element is the same as all elements
-            len_checks = [l.count(l[0]) == len(l) for l in lens]
-            if not all(len_checks):
-                raise ValueError("all arguments for a particular procedure must be the same length")
-
-            # expand all the arguments in the procs then flatten the list
-            # the expansion of each proc generates its own list
-            proc_inits = [_convert_to_proc_inits(_expand_proc(proc)) for proc in procs]
-            proc_inits = [proc for proc_expanded in proc_inits for proc in proc_expanded]
-
-            run_init = {'description': description, 'environment_name': environment, 'proc_inits': proc_inits}
-            runm.run(self, run_init, convert_args_to_numbers=False)
-
-        if expand_args == 'by_run':
-            # check that all arguments are the same length
-            # first get all the lenghts, proc[1] is the args dict
-            lens = [len(proc[1][k]) for proc in procs for k in proc[1]]
-            # check the first element is the same as all elements
-            if not lens.count(lens[0]) == len(lens):
-                raise ValueError("all arguments for a particular procedure must be the same length")
-
-            # expand all the procs individually
-            proc_inits = [_convert_to_proc_inits(_expand_proc(proc)) for proc in procs]
-            # zip over the list to get one proc for each run
-            proc_inits = zip(*proc_inits)
-
-            # if seperate runs are required, get each element and run it, otherwise flatten
-            # the list and perform a single run
-            if separate_runs:
-                for thisrun_proc_inits in proc_inits:
-                    run_init = {'description': description,
-                                'environment_name': environment,
-                                'proc_inits': thisrun_proc_inits}
-                    runm.run(self, run_init, convert_args_to_numbers=False)
-            else:
-                proc_inits = [proc for proc_expanded in proc_inits for proc in proc_expanded]
-                run_init = {'description': description, 'environment_name': environment, 'proc_inits': proc_inits}
-                runm.run(self, run_init, convert_args_to_numbers=False)
+        # turn the procs into proc_init dictionaries
+        proc_inits = _convert_to_proc_inits(procs)
+        run_init = {'description': description, 'environment_name': environment, 'proc_inits': proc_inits}
+        runm.run(self, run_init, convert_args_to_numbers=False)
 
     def start(self):
         webserver.run_server(self)
