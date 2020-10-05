@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import glob
 import uuid
+import shutil
 from typing import List, Tuple
 
 import simpyl.database as db
@@ -97,6 +98,7 @@ def savefig(environment: str,
             s.FIGURE_FORMAT.format(proc_name, title, str(uuid.uuid4()))
         ), *args, **kwargs
     )
+    plt.close('all')
 
 
 def get_figures(environment: str, run_result_id: int) -> List[str]:
@@ -146,6 +148,7 @@ def reset_environment(environment: str):
     """ creates all the necessary directories and database entries for a new environment
     """
     # make all the directories for the environment if they don't exist
+    shutil.rmtree(environment)
     create_dir_if_needed(environment)
     db.reset_database(environment)
 
