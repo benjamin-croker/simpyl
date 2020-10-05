@@ -4,8 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-from simpyl import Simpyl
-import simpyl.database as db
+from simpyl import Simpyl, run_server
 
 sl = Simpyl()
 
@@ -32,6 +31,7 @@ def test_classifier(clf, X, y_true):
     y_pred = clf.predict(X)
     return round(np.sum(y_pred == y_true) / float(y_pred.size), 3)
 
+
 @sl.add_procedure('trainer')
 def main_trainer(n_estimators, min_samples_split):
     X, y = load_data()
@@ -51,19 +51,18 @@ def feature_importance():
     plt.bar(np.arange(n_features), trained_classifier.feature_importances_)
     # 0.4 is half the default width
     plt.xticks(
-        np.arange(n_features)+0.4,
-        ["Feature {}".format(i+1) for i in range(n_features)]
+        np.arange(n_features) + 0.4,
+        ["Feature {}".format(i + 1) for i in range(n_features)]
     )
     sl.savefig("Feature Importances")
-    return(trained_classifier)
+    return (trained_classifier)
 
 
 if __name__ == '__main__':
-    # run the reset to setup the database the first time
-    db.reset_database(os.path.join('simpyl', 'tests', 'test_ml.db'))
-
-    # use the test database
-    db.use_database(os.path.join('simpyl', 'tests', 'test_ml.db'))
+    # reset the environment before use the first time to create dirs and db
+    sl.reset_environment(os.path.join('envs', 'test'))
+    # use the test environment
+    sl.use_environment(os.path.join('envs', 'test'))
 
     # a run can be initated from the webserver or in code
     sl.run(
@@ -78,4 +77,4 @@ if __name__ == '__main__':
     )
 
     # start the webserver
-    sl.start()
+    run_server(sl)

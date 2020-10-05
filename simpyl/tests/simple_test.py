@@ -23,4 +23,4 @@ if __name__ == '__main__':
             ('bar', {'a': 10, 'b': 20})],
            description="No expansion")
 
-    sl.start()
+    sl.start_webserver()

@@ -34,7 +34,6 @@ var app = new Vue({
     proc_working: {},
     run_init: {
       description: "",
-      environment_name: "default",
       proc_inits: []
     }
   },
