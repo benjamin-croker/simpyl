@@ -22,12 +22,19 @@ class Simpyl(object):
         self._current_proc = ''
         self._logger = runm.stream_logger()
 
-    def set_environment(self, environment_name):
+    def reset_environment(self, environment):
         """ creates all the necessary directories and database entries for a new environment
             and sets the current environment state
         """
-        runm.set_environment(environment_name)
-        self._current_env = environment_name
+        runm.reset_environment(environment)
+        self._current_env = environment
+
+    def use_environment(self, environment):
+        # TODO: check file structure and DB is set correctly
+        self._current_env = environment
+
+    def get_environment(self) -> str:
+        return self._current_env
 
     def set_run(self, run_result_id, description):
         """ creates all the necessary directories and sets up the Simpyl object for a run
@@ -52,7 +59,10 @@ class Simpyl(object):
         """ saves a figure to the run folder. *args and **kwargs are passed to the
             matplotlib.savefig function
         """
-        runm.savefig(title, self._current_proc, self._current_run, *args, **kwargs)
+        runm.savefig(
+            self._current_env, self._current_run, self._current_proc,
+            title, *args, **kwargs
+        )
 
     def read_cache(self, filename):
         """ loads a file from the cache.
@@ -64,7 +74,7 @@ class Simpyl(object):
         """ caches and object to file.
             calls run_manager.write_cache
         """
-        return runm.write_cache(obj, filename, self._current_env)
+        return runm.write_cache(self._current_env, obj, filename)
 
     def add_procedure(self, procedure_name):
         """ registers a procedure with the Simpyl object
@@ -97,14 +107,10 @@ class Simpyl(object):
     def run_from_init(self, run_init, convert_args_to_numbers):
         """ starts a run from a run_init dictionary
         """
-        # use the default environment if none is given
-        if run_init['environment_name'] is None:
-            run_init['environment_name'] = s.DEFAULT_ENV_NAME
-        self.set_environment(run_init['environment_name'])
 
         # register run in database and create a run result
         run_result = runm.to_run_result(run_init)
-        run_result['id'] = db.register_run_result(run_result)
+        run_result['id'] = runm.register_run_result(self, run_result)
 
         self.set_run(run_result['id'], run_result['description'])
         self._logger.info(
@@ -146,12 +152,13 @@ class Simpyl(object):
             proc_result['timestamp_stop'] = time.time()
             proc_result['result'] = str(results)
 
-            db.register_proc_result(proc_result)
+            proc_result['id'] = db.register_proc_result(proc_result)
             run_result['proc_results'] += [proc_result]
 
         # register the run result
         run_result['timestamp_stop'] = time.time()
         run_result['status'] = 'complete'
+        runm.update_run_result(self._current_env, run_result)
         
         self.reset_state()
         return run_result
@@ -167,7 +174,7 @@ class Simpyl(object):
                 Run environment as a string. If it is None, the default environment is used.
         """        
         return self.run_from_init(
-            runm.create_run_init(procs, description, environment),
+            runm.create_run_init(procs, description),
             convert_args_to_numbers=False
         )
     

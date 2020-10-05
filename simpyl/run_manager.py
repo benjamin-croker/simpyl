@@ -5,7 +5,10 @@ import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 import glob
+import uuid
+from typing import List
 
+from simpyl import Simpyl
 import simpyl.database as db
 import simpyl.settings as s
 
@@ -46,18 +49,18 @@ def stream_logger():
     return logger
 
 
-def run_path(run_result_id, filename=''):
+def run_path(environment, run_result_id, filename=''):
     """ gets the pathname for saving files to do with the given run
         optionally adds a filename to the path
     """
-    return os.path.join('runs', str(run_result_id), filename)
+    return os.path.join(environment, 'runs', str(run_result_id), filename)
 
 
-def env_path(environment_name, filename=''):
+def env_path(environment, filename=''):
     """ gets the pathname for saving files to do with the given environment
         optionally adds a filename to the path
     """
-    return os.path.join('envs', environment_name, filename)
+    return os.path.join(environment, filename)
 
 
 def create_dir_if_needed(path):
@@ -68,13 +71,15 @@ def create_dir_if_needed(path):
             raise
 
 
-def savefig(title, proc_name, run_result_id, *args, **kwargs):
+def savefig(environment, run_result_id, proc_name, title, *args, **kwargs):
     """ saves a figure to the run folder. *args and **kwargs are passed to the
         matplotlib.savefig function
     """
     plt.savefig(
-        run_path(run_result_id, s.FIGURE_FORMAT.format(proc_name, title)),
-        *args, **kwargs
+        run_path(
+            environment, run_result_id,
+            s.FIGURE_FORMAT.format(proc_name, title, str(uuid.uuid4()))
+        ), *args, **kwargs
     )
 
 
@@ -85,11 +90,14 @@ def get_log(run_result_id):
         return ''.join(f.readlines())
 
 
-def get_figures(run_result_id):
+def get_figures(environment, run_result_id):
     """ gets a list of figures for a given run
     """
-    return [os.path.basename(fname) for fname in
-            glob.glob(run_path(run_result_id, s.FIGURE_FORMAT.format("*", "*")))]
+    return [
+        os.path.basename(fname)
+        for fname in
+        glob.glob(run_path(environment, run_result_id, s.FIGURE_FORMAT.format("*", "*", "*")))
+    ]
 
 
 def get_figure(run_result_id, figure_name):
@@ -110,29 +118,27 @@ def read_cache(filename, environment_name):
     return obj
 
 
-def write_cache(obj, filename, environment_name):
+def write_cache(environment, obj, filename):
     """ caches and object to file
         If the filename ends with .csv and the object is a numpy array,
         it is saved as a csv file
     """
     if filename[-4:] == '.csv' and type(obj) == np.ndarray:
-        np.savetxt(env_path(environment_name, filename), obj, delimiter=',')
+        np.savetxt(env_path(environment, filename), obj, delimiter=',')
     else:
-        with open(env_path(environment_name, filename), 'wb') as f:
+        with open(env_path(environment, filename), 'wb') as f:
             pickle.dump(obj, f)
 
     # update the database to register the cached file
     logging.info("[simpyl logged] {} written to cache".format(filename))
 
 
-def set_environment(environment_name):
+def reset_environment(environment):
     """ creates all the necessary directories and database entries for a new environment
     """
     # make all the directories for the environment if they don't exist
-    create_dir_if_needed(env_path(environment_name))
-
-    # register the environment in the database and set the current env
-    db.register_environment(environment_name)
+    create_dir_if_needed(environment)
+    db.reset_database(environment)
 
 
 def set_run(run_result_id, description):
@@ -196,10 +202,35 @@ def to_proc_result(proc_init):
             'run_result_id': None}
 
 
-def create_run_init(procs, description, environment=s.DEFAULT_ENV_NAME):
+def create_run_init(procs, description):
     """ takes a list of (proc_name, arguments) tuples and converts them to a
         a correctly formatted run_init
     """
-    return {'description': description,
-            'environment_name': environment,
-            'proc_inits': to_proc_inits(procs)}
+    return {
+        'description': description,
+        'proc_inits': to_proc_inits(procs)
+    }
+
+
+def register_run_result(sl: Simpyl, run_result: dict) -> int:
+    """ Passes the run result to the database driver to write
+    """
+    return db.register_run_result(sl.get_environment(), run_result)
+
+
+def update_run_result(sl: Simpyl, run_result: dict) -> int:
+    """ Passes the run result to the database driver to write
+    """
+    return db.update_run_result(sl.get_environment(), run_result)
+
+
+def get_run_results(sl: Simpyl) -> List[dict]:
+    """ Passes request for all run results to the database
+    """
+    return db.get_run_results(sl.get_environment())
+
+
+def get_single_run_result(sl: Simpyl, run_result_id: int) -> dict:
+    """ Passes request for a single run result to the database
+    """
+    return db.get_single_run_result(sl.get_environment(), run_result_id)
