@@ -2,21 +2,22 @@ import inspect
 import time
 from typing import List
 
-import simpyl.webserver as webserver
 import simpyl.run_manager as runm
 
 
 class Simpyl(object):
     def __init__(self):
+        # constant variables
         self._procedures = {}
         self._proc_inits = []
+        # manually updated state
         self._current_env = ''
+        # updated and reset each run
         self._current_run = -1
         self._current_proc = ''
         self._logger = runm.stream_logger()
 
     def reset_state(self):
-        self._current_env = ''
         self._current_run = -1
         self._current_proc = ''
         self._logger = runm.stream_logger()
@@ -42,7 +43,7 @@ class Simpyl(object):
         runm.set_run(self._current_env, run_result_id, description)
         self._current_run = run_result_id
         # set up logging to log to a file
-        self._logger = runm.run_logger(run_result_id)
+        self._logger = runm.run_logger(self._current_env, run_result_id)
 
     def set_proc(self, proc_name: str):
         """ sets the current proc state
@@ -84,13 +85,13 @@ class Simpyl(object):
         """ loads a file from the cache.
             calls run_manager.read_cache
         """
-        return runm.read_cache(filename, self._current_env)
+        return runm.read_cache(self._current_env, filename)
 
     def write_cache(self, obj, filename):
         """ caches and object to file.
             calls run_manager.write_cache
         """
-        return runm.write_cache(self._current_env, obj, filename)
+        return runm.write_cache(self._current_env, filename, obj)
 
     def add_procedure(self, procedure_name):
         """ registers a procedure with the Simpyl object
@@ -126,12 +127,12 @@ class Simpyl(object):
 
         # register run in database and create a run result
         run_result = runm.to_run_result(run_init)
-        run_result['id'] = runm.register_run_result(self, run_result)
+        run_result['id'] = runm.register_run_result(self._current_env, run_result)
 
         self.set_run(run_result['id'], run_result['description'])
         self._logger.info(
             "[simpyl logged] run #{} started with environment {}".format(
-                run_result['id'], run_result['environment_name']
+                run_result['id'], run_result['environment']
             )
         )
         run_result['timestamp_start'] = time.time()
@@ -168,7 +169,7 @@ class Simpyl(object):
             proc_result['timestamp_stop'] = time.time()
             proc_result['result'] = str(results)
 
-            proc_result['id'] = runm.register_proc_result(proc_result)
+            proc_result['id'] = runm.register_proc_result(self._current_env, proc_result)
             run_result['proc_results'] += [proc_result]
 
         # register the run result
@@ -190,9 +191,6 @@ class Simpyl(object):
                 Run environment as a string. If it is None, the default environment is used.
         """
         return self.run_from_init(
-            runm.create_run_init(procs, description),
+            runm.to_run_init(self._current_env, procs, description),
             convert_args_to_numbers=False
         )
-
-    def start(self):
-        webserver.run_server(self)

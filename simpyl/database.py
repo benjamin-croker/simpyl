@@ -47,8 +47,8 @@ def reset_database(environment: str):
             timestamp_stop REAL,
             description TEXT,
             status TEXT,
-            environment_name TEXT,
-            FOREIGN KEY(environment_name) REFERENCES enviromnent(name)
+            environment TEXT,
+            FOREIGN KEY(environment) REFERENCES enviromnent(name)
         );
         """,
         """
@@ -93,13 +93,19 @@ def register_run_result(db_con, run_result: dict) -> Optional[int]:
     # check that the id field is empty
     if run_result['id'] is not None:
         return None
+    cur = db_con.cursor()
+    cur.execute("PRAGMA database_list")
+    rows = cur.fetchall()
+
+    for row in rows:
+        print(row[0], row[1], row[2])
 
     cursor = db_con.execute("INSERT INTO run_result VALUES (NULL,?,?,?,?,?);",
                             [run_result['timestamp_start'],
                              run_result['timestamp_stop'],
                              run_result['description'],
                              run_result['status'],
-                             run_result['environment_name']])
+                             run_result['environment']])
     # return the run id just created
     return cursor.lastrowid
 
@@ -110,15 +116,27 @@ def update_run_result(db_con, run_result: dict) -> int:
     """
     _update_run_result_sql = """
     UPDATE run_result SET timestamp_start=?, timestamp_stop=?, description=?, status=?,
-    environment_name = ? WHERE id = ?;
+    environment = ? WHERE id = ?;
     """
     db_con.execute(_update_run_result_sql, [run_result['timestamp_start'],
                                             run_result['timestamp_stop'],
                                             run_result['description'],
                                             run_result['status'],
-                                            run_result['environment_name'],
+                                            run_result['environment'],
                                             run_result['id']])
     return run_result['id']
+
+
+# this function is called internally and uses the db_con directly
+# instead of the decorator to replace with the environment name
+def _get_proc_results(db_con, run_id: int = None) -> List[dict]:
+    """ gets all procedure calls associated with the given run_id
+    """
+    if run_id is None:
+        cursor = db_con.execute("SELECT * FROM proc_result")
+    else:
+        cursor = db_con.execute("SELECT * FROM proc_result WHERE run_result_id = ? ORDER BY run_order", [run_id])
+    return construct_dict(cursor)
 
 
 @with_db
@@ -128,7 +146,7 @@ def get_run_results(db_con) -> List[dict]:
     cursor = db_con.execute("SELECT * FROM run_result;")
     runs = construct_dict(cursor)
     for run in runs:
-        run['proc_results'] = get_proc_results(run_id=run['id'])
+        run['proc_results'] = _get_proc_results(db_con, run_id=run['id'])
     return runs
 
 
@@ -139,7 +157,7 @@ def get_single_run_result(db_con, run_result_id: int) -> Optional[dict]:
     cursor = db_con.execute("SELECT * FROM run_result WHERE id = ?;", [run_result_id])
     runs = construct_dict(cursor)
     for run in runs:
-        run['proc_results'] = get_proc_results(run_id=run['id'])
+        run['proc_results'] = _get_proc_results(db_con, run_id=run['id'])
     if len(runs) != 1:
         return None
     return runs[0]
@@ -165,13 +183,3 @@ def register_proc_result(db_con, proc_result: dict) -> Optional[int]:
                              proc_result['run_result_id']])
     return cursor.lastrowid
 
-
-@with_db
-def get_proc_results(db_con, run_id: int = None) -> List[dict]:
-    """ gets all procedure calls associated with the given run_id
-    """
-    if run_id is None:
-        cursor = db_con.execute("SELECT * FROM proc_result")
-    else:
-        cursor = db_con.execute("SELECT * FROM proc_result WHERE run_result_id = ? ORDER BY run_order", [run_id])
-    return construct_dict(cursor)

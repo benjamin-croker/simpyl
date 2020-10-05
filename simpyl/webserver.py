@@ -62,9 +62,12 @@ def api_get_run(run_result_id: int):
 def api_new_run():
     if not request.json or not all(
             [k in request.json for k in
-             ['description', 'environment_name', 'proc_inits']]):
+             ['description', 'proc_inits']]):
         abort(400)
-    run_result = sl.run_from_init(request.json, convert_args_to_numbers=True)
+    # add the environment
+    run_init = request.json
+    run_init['environment'] = sl.get_environment()
+    run_result = sl.run_from_init(run_init, convert_args_to_numbers=True)
     return json.dumps(run_result), 201
 
 

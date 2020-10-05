@@ -34,13 +34,14 @@ def to_number(string):
             return string
 
 
-def run_logger(run_result_id):
+def run_logger(environment: str, run_result_id: int):
     """ sets up the logger for the Simpyl object to log to an appropriate file
     """
     logger = logging.Logger('run_handler')
     handler = logging.FileHandler(
-        run_path(run_result_id, s.LOGFILE_FORMAT.format(run_result_id)),
-        mode='w')
+        run_path(environment, run_result_id, s.LOGFILE_FORMAT.format(run_result_id)),
+        mode='w'
+    )
     handler.setFormatter(logging.Formatter('%(asctime)s %(message)s'))
     logger.addHandler(handler)
     return logger
@@ -152,7 +153,7 @@ def reset_environment(environment: str):
 def set_run(environment: str, run_result_id: int, description: str):
     """ creates all the necessary directories and sets up the Simpyl object for a run
     """
-    create_dir_if_needed(run_path(run_result_id))
+    create_dir_if_needed(run_path(environment, run_result_id))
 
     # write a text file with the description as as text file
     filename = os.path.join(
@@ -188,7 +189,7 @@ def to_run_result(run_init: dict) -> dict:
             'timestamp_stop': None,
             'status': 'running',
             'description': run_init['description'],
-            'environment_name': run_init['environment_name'],
+            'environment': run_init['environment'],
             'proc_results': []}
 
 
@@ -206,12 +207,13 @@ def to_proc_result(proc_init: dict) -> dict:
             'run_result_id': None}
 
 
-def create_run_init(procs: List[Tuple], description: str) -> dict:
+def to_run_init(environment: str, procs: List[Tuple], description: str) -> dict:
     """ takes a list of (proc_name, arguments) tuples and converts them to a
         a correctly formatted run_init
     """
     return {
         'description': description,
+        'environment': environment,
         'proc_inits': to_proc_inits(procs)
     }
 
