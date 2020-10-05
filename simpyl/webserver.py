@@ -4,7 +4,6 @@ import os
 import mimetypes
 
 from simpyl import Simpyl
-import simpyl.run_manager as runm
 
 app = Flask(__name__, static_folder='site')
 sl = Simpyl()
@@ -48,14 +47,14 @@ def use_environment():
 @app.route('/api/runs/')
 def api_get_runs():
     return jsonify(
-        {'run_results': [r for r in runm.get_run_results(sl)]}
+        {'run_results': [r for r in sl.get_run_results()]}
     )
 
 
-@app.route('/api/run/<int:run_id>')
-def api_get_run(run_id):
+@app.route('/api/run/<int:run_result_id>')
+def api_get_run(run_result_id: int):
     return jsonify(
-        {'run_result': runm.get_single_run_result(sl, run_id)}
+        {'run_result': sl.get_single_run_result(run_result_id)}
     )
 
 
@@ -69,24 +68,25 @@ def api_new_run():
     return json.dumps(run_result), 201
 
 
-@app.route('/api/log/<int:run_id>')
-def get_log(run_id):
-    return json.dumps({'log': runm.get_log(str(run_id))})
+@app.route('/api/log/<int:run_result_id>')
+def get_log(run_result_id: int):
+    return json.dumps({'log': sl.get_log(run_result_id)})
 
 
-@app.route('/api/figures/<int:run_id>')
-def api_get_figures(run_id):
-    figure_urls = [url_for('api_get_figure',
-                           run_id=run_id,
-                           figure_name=fname,
-                           _external=True)
-                   for fname in runm.get_figures(run_id)]
+@app.route('/api/figures/<int:run_result_id>')
+def api_get_figures(run_result_id: int):
+    figure_urls = [
+        url_for(
+            'api_get_figure', run_result_id=run_result_id, figure_name=fname, _external=True
+        )
+        for fname in sl.get_figures(run_result_id)
+    ]
     return json.dumps({'figures': figure_urls})
 
 
-@app.route('/api/figure/<int:run_id>/<string:figure_name>')
-def api_get_figure(run_id, figure_name):
-    img = runm.get_figure(run_id, figure_name)
+@app.route('/api/figure/<int:run_result_id>/<string:figure_name>')
+def api_get_figure(run_result_id: int, figure_name: str):
+    img = sl.get_figure(run_result_id, figure_name)
     with open(os.path.join(app.root_path, 'temp.image'), 'wb') as tmp:
         tmp.write(img.read())
     img.close()

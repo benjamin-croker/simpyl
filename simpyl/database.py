@@ -7,10 +7,15 @@ import sqlite3
 from typing import List, Optional
 
 import simpyl.settings as s
-from simpyl import Simpyl
 
-# the default db filename is copied so that it can be changed by reset_database
-DB_PATH = os.path.join(s.DEFAULT_ENV_DIR, s.DB_FILENAME)
+
+def construct_dict(cursor):
+    """ transforms the sqlite cursor rows from table format to a
+        list of dictionary objects
+    """
+    rows = cursor.fetchall()
+    return [dict((cursor.description[i][0], value) for i, value in enumerate(row))
+            for row in rows]
 
 
 def with_db(fn):
@@ -19,9 +24,9 @@ def with_db(fn):
         which can be used to determine the correct database
     """
 
-    def new_fn(sl: Simpyl, *args, **kwargs):
+    def new_fn(environment: str, *args, **kwargs):
         db_con = sqlite3.connect(
-            os.path.join(sl.get_environment(), s.DB_FILENAME)
+            os.path.join(environment, s.DB_FILENAME)
         )
         result = fn(db_con, *args, **kwargs)
         db_con.commit()
@@ -31,7 +36,7 @@ def with_db(fn):
     return new_fn
 
 
-def reset_database(environment: str = s.DEFAULT_ENV_DIR):
+def reset_database(environment: str):
     """ deletes all data in the current database and creates a new one with a default environment entry
     """
     _create_tables_sql = [
@@ -170,12 +175,3 @@ def get_proc_results(db_con, run_id: int = None) -> List[dict]:
     else:
         cursor = db_con.execute("SELECT * FROM proc_result WHERE run_result_id = ? ORDER BY run_order", [run_id])
     return construct_dict(cursor)
-
-
-def construct_dict(cursor):
-    """ transforms the sqlite cursor rows from table format to a
-        list of dictionary objects
-    """
-    rows = cursor.fetchall()
-    return [dict((cursor.description[i][0], value) for i, value in enumerate(row))
-            for row in rows]

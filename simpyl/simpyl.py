@@ -1,10 +1,9 @@
 import inspect
 import time
+from typing import List
 
 import simpyl.webserver as webserver
 import simpyl.run_manager as runm
-import simpyl.database as db
-import simpyl.settings as s
 
 
 class Simpyl(object):
@@ -12,50 +11,55 @@ class Simpyl(object):
         self._procedures = {}
         self._proc_inits = []
         self._current_env = ''
-        self._current_run = ''
+        self._current_run = -1
         self._current_proc = ''
         self._logger = runm.stream_logger()
 
     def reset_state(self):
         self._current_env = ''
-        self._current_run = ''
+        self._current_run = -1
         self._current_proc = ''
         self._logger = runm.stream_logger()
 
-    def reset_environment(self, environment):
+    def reset_environment(self, environment: str):
         """ creates all the necessary directories and database entries for a new environment
             and sets the current environment state
         """
         runm.reset_environment(environment)
         self._current_env = environment
 
-    def use_environment(self, environment):
+    def use_environment(self, environment: str):
         # TODO: check file structure and DB is set correctly
         self._current_env = environment
 
     def get_environment(self) -> str:
         return self._current_env
 
-    def set_run(self, run_result_id, description):
+    def set_run(self, run_result_id: int, description: str):
         """ creates all the necessary directories and sets up the Simpyl object for a run
             and sets the current run state
         """
-        runm.set_run(run_result_id, description)
+        runm.set_run(self._current_env, run_result_id, description)
         self._current_run = run_result_id
         # set up logging to log to a file
         self._logger = runm.run_logger(run_result_id)
 
-    def set_proc(self, proc_name):
+    def set_proc(self, proc_name: str):
         """ sets the current proc state
         """
         self._current_proc = proc_name
 
-    def log(self, text):
+    def log(self, text: str):
         """ logs some information
         """
         self._logger.info("[user logged] {}".format(text))
 
-    def savefig(self, title, *args, **kwargs):
+    def get_log(self, run_result_id: int) -> str:
+        """ Returns the log text
+        """
+        return runm.get_log(self._current_env, run_result_id)
+
+    def savefig(self, title: str, *args, **kwargs):
         """ saves a figure to the run folder. *args and **kwargs are passed to the
             matplotlib.savefig function
         """
@@ -63,6 +67,18 @@ class Simpyl(object):
             self._current_env, self._current_run, self._current_proc,
             title, *args, **kwargs
         )
+
+    def get_figures(self, run_result_id: int) -> List[str]:
+        return runm.get_figures(self._current_env, run_result_id)
+
+    def get_figure(self, run_result_id: int, figure_name: str):
+        return runm.get_figure(self._current_env, run_result_id, figure_name)
+
+    def get_run_results(self) -> List[dict]:
+        return runm.get_run_results(self._current_env)
+
+    def get_single_run_result(self, run_result_id: int) -> dict:
+        return runm.get_single_run_result(self._current_env, run_result_id)
 
     def read_cache(self, filename):
         """ loads a file from the cache.
@@ -82,7 +98,7 @@ class Simpyl(object):
 
         def decorator(fn):
             # get argument information
-            argspec = inspect.getargspec(fn)
+            argspec = inspect.getfullargspec(fn)
             arguments = [{'name': arg, 'value': None} for arg in argspec.args]
 
             # add the default arguments, these are the at the end of the argument spec
@@ -100,7 +116,7 @@ class Simpyl(object):
             return fn
 
         return decorator
-    
+
     def get_proc_inits(self):
         return self._proc_inits
 
@@ -152,18 +168,18 @@ class Simpyl(object):
             proc_result['timestamp_stop'] = time.time()
             proc_result['result'] = str(results)
 
-            proc_result['id'] = db.register_proc_result(proc_result)
+            proc_result['id'] = runm.register_proc_result(proc_result)
             run_result['proc_results'] += [proc_result]
 
         # register the run result
         run_result['timestamp_stop'] = time.time()
         run_result['status'] = 'complete'
         runm.update_run_result(self._current_env, run_result)
-        
+
         self.reset_state()
         return run_result
 
-    def run(self, procs, description, environment=s.DEFAULT_ENV_NAME):
+    def run(self, procs, description):
         """ starts a run with the listed procedures
             
             procs:
@@ -172,12 +188,11 @@ class Simpyl(object):
                 Run description as a string
             environment:
                 Run environment as a string. If it is None, the default environment is used.
-        """        
+        """
         return self.run_from_init(
             runm.create_run_init(procs, description),
             convert_args_to_numbers=False
         )
-    
 
     def start(self):
         webserver.run_server(self)
