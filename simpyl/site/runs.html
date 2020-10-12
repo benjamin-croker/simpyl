@@ -41,6 +41,7 @@
               <thead class="thead-dark">
                 <tr>
                   <th style="white-space:nowrap">Run ID</th>
+                  <th style="white-space:nowrap">Status</th>
                   <th style="white-space:nowrap">Start Time</th>
                   <th style="white-space:nowrap">Stop Time</th>
                   <th style="white-space:nowrap">Description</th>
@@ -50,6 +51,7 @@
               <tbody>
                 <tr v-for="run in run_results" :key="run.id">
                   <td><a v-bind:href="'/rundetail?runid='+run.id">Run:{{run.id}}</a></td>
+                  <td style="white-space:nowrap">{{run.status}}</td>
                   <td style="white-space:nowrap">{{run.timestamp_start}}</td>
                   <td style="white-space:nowrap">{{run.timestamp_stop}}</td>
                   <td>{{run.description}}</td>

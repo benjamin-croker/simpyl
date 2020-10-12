@@ -190,7 +190,7 @@ def to_run_result(run_init: dict) -> dict:
     return {'id': None,
             'timestamp_start': None,
             'timestamp_stop': None,
-            'status': 'running',
+            'status': 'pending',
             'description': run_init['description'],
             'environment': run_init['environment'],
             'proc_results': []}

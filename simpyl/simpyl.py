@@ -1,5 +1,7 @@
 import inspect
 import time
+import queue
+import threading
 from typing import List
 
 import simpyl.run_manager as runm
@@ -16,6 +18,7 @@ class Simpyl(object):
         self._current_run = -1
         self._current_proc = ''
         self._logger = runm.stream_logger()
+        self._queue = queue.Queue()
 
     def reset_state(self):
         self._current_run = -1
@@ -121,14 +124,7 @@ class Simpyl(object):
     def get_proc_inits(self):
         return self._proc_inits
 
-    def run_from_init(self, run_init, convert_args_to_numbers):
-        """ starts a run from a run_init dictionary
-        """
-
-        # register run in database and create a run result
-        run_result = runm.to_run_result(run_init)
-        run_result['id'] = runm.register_run_result(self._current_env, run_result)
-
+    def _perform_run(self, run_init, run_result, convert_args_to_numbers):
         self.set_run(run_result['id'], run_result['description'])
         self._logger.info(
             "[simpyl logged] run #{} started with environment {}".format(
@@ -136,6 +132,8 @@ class Simpyl(object):
             )
         )
         run_result['timestamp_start'] = time.time()
+        run_result['status'] = 'running'
+        runm.update_run_result(self._current_env, run_result)
 
         # call all the procedures
         for run_order, proc_init in enumerate(run_init['proc_inits']):
@@ -180,17 +178,26 @@ class Simpyl(object):
         self.reset_state()
         return run_result
 
+    def _queue_worker(self):
+        while True:
+            run_init, run_result, convert_args_to_numbers = self._queue.get()
+            self._perform_run(run_init, run_result, convert_args_to_numbers)
+            self._queue.task_done()
+
+    def queue_run_init(self, run_init, convert_args_to_numbers):
+        """ Sets up a run and adds it to the queue
+        """
+        run_result = runm.to_run_result(run_init)
+        run_result['id'] = runm.register_run_result(self._current_env, run_result)
+        self._queue.put((run_init, run_result, convert_args_to_numbers))
+
+    def start_queue(self):
+        threading.Thread(target=self._queue_worker, daemon=True).start()
+
     def run(self, procs, description):
         """ starts a run with the listed procedures
-            
-            procs:
-                a list of (procedure, argument_dict) tuples in the form 'proc_name', {'arg_name':arg_value,...}
-            description:
-                Run description as a string
-            environment:
-                Run environment as a string. If it is None, the default environment is used.
         """
-        return self.run_from_init(
-            runm.to_run_init(self._current_env, procs, description),
-            convert_args_to_numbers=False
-        )
+        run_init = runm.to_run_init(self._current_env, procs, description)
+        run_result = runm.to_run_result(run_init)
+        run_result['id'] = runm.register_run_result(self._current_env, run_result)
+        return self._perform_run(run_init, run_result, False)

@@ -3,6 +3,7 @@ from sklearn.ensemble import RandomForestClassifier
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import time
 
 from simpyl import Simpyl, run_server
 
@@ -56,6 +57,13 @@ def feature_importance():
     )
     sl.savefig("Feature Importances")
     return (trained_classifier)
+
+
+# used to demonstrate the queue in the webserver
+@sl.add_procedure('wait20sec')
+def waitseconds(n=20):
+    time.sleep(n)
+    return f"Waited for {n} seconds"
 
 
 if __name__ == '__main__':

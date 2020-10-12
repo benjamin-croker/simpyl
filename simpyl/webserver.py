@@ -67,7 +67,7 @@ def api_new_run():
     # add the environment
     run_init = request.json
     run_init['environment'] = sl.get_environment()
-    run_result = sl.run_from_init(run_init, convert_args_to_numbers=True)
+    run_result = sl.queue_run_init(run_init, convert_args_to_numbers=True)
     return json.dumps(run_result), 201
 
 
@@ -99,4 +99,5 @@ def api_get_figure(run_result_id: int, figure_name: str):
 def run_server(simpyl_object: Simpyl):
     global sl
     sl = simpyl_object
+    sl.start_queue()
     app.run(debug=False)
