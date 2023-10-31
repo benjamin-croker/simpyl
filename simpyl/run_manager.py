@@ -148,6 +148,7 @@ def reset_environment(environment: str):
     """ creates all the necessary directories and database entries for a new environment
     """
     # make all the directories for the environment if they don't exist
+    create_dir_if_needed(environment)
     shutil.rmtree(environment)
     create_dir_if_needed(environment)
     db.reset_database(environment)

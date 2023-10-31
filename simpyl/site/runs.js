@@ -1,3 +1,5 @@
+const { createApp } = Vue
+
 const toDateTimeString = function(timestamp) {
   const d = new Date(1000*timestamp);
   return d.toLocaleString();
@@ -17,12 +19,13 @@ const formatRun = function(run) {
   };
 }
 
-var app = new Vue({
-  el: '#vue_runs',
+createApp({
   created() {this.getRuns()},
 
-  data: {
-    run_results: []
+  data() {
+    return {
+      run_results: []
+    }
   },
 
   methods: {
@@ -32,4 +35,4 @@ var app = new Vue({
         .then(jsonData => this.run_results = jsonData.run_results.map(formatRun))
     }
   },
-})
+}).mount('#vue_runs')
