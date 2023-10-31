@@ -4,9 +4,9 @@
 * There is a hierarchy of environment -> run -> procedure
 * A run is the result of calling several procedures (Python functions). The arguments are set and return values recorded for each procedure.
 * Runs are performed in an environment. Basically environments exist to separate cache files, as they will be overwritten within an environment
-logs are just text files stored on the directory
-arguments to procedures can be entered manually or loaded from cache
-results of procedures are stored as text, or if the procedure caches its return values, the filenames of the cached files are stored
+* Logs are just text files stored on the directory
+* Arguments to procedures can be entered manually or loaded from cache
+* Results of procedures are stored as text, or if the procedure caches its return values, the filenames of the cached files are stored
 
 ## JSON Models
 
