@@ -60,12 +60,13 @@ def api_get_run(run_result_id: int):
 
 @app.route('/api/newrun', methods=['POST'])
 def api_new_run():
-    if not request.json or not all(
-            [k in request.json for k in
+    request_payload = request.get_json()
+    if not request_payload or not all(
+            [k in request_payload for k in
              ['description', 'proc_inits']]):
         abort(400)
     # add the environment
-    run_init = request.json
+    run_init = request_payload
     run_init['environment'] = sl.get_environment()
     run_result = sl.queue_run_init(run_init, convert_args_to_numbers=True)
     return json.dumps(run_result), 201

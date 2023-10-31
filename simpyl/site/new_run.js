@@ -20,8 +20,11 @@ const formatProcInit = function (proc_init, run_order) {
 
 const createRequest = function (run_init) {
   return {
-    headers: { "Content-Type": "application/json; charset=utf-8" },
     method: 'POST',
+    headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json;charset=utf-8'
+    },
     body: JSON.stringify(run_init)
   };
 }
@@ -52,8 +55,10 @@ createApp({
     },
 
     startRun: function () {
-      fetch('api/newrun', createRequest(this.run_init))
+      const req = createRequest(this.run_init);
+      fetch('api/newrun', req)
         .then(window.location.href = '/runs')
+        .catch((err) => console.log(err))
     },
 
     getProcInits: function () {
