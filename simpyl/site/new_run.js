@@ -22,8 +22,8 @@ const createRequest = function (run_init) {
   return {
     method: 'POST',
     headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json;charset=utf-8'
+      'Accept': 'application/json',
+      'Content-Type': 'application/json;charset=utf-8'
     },
     body: JSON.stringify(run_init)
   };
@@ -57,7 +57,10 @@ createApp({
     startRun: function () {
       const req = createRequest(this.run_init);
       fetch('api/newrun', req)
-        .then(window.location.href = '/runs')
+        .then((response) => {
+          if (response.ok) window.location.href = '/runs';
+          else throw new Error(response.status);
+        })
         .catch((err) => console.log(err))
     },
 
